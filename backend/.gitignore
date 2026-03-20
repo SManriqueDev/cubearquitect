@@ -1,0 +1,16 @@
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Temporary/build artifacts
+tmp/
+dist/
+build/
+*.out
+*.test
+*.exe
+*.dll
+*.so
+*.dylib
+*.a
