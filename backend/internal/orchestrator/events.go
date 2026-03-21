@@ -50,7 +50,7 @@ func (h *EventHub) Unsubscribe(deploymentID string, ch chan *Event) {
 	for i, c := range channels {
 		if c == ch {
 			h.subscriptions[deploymentID] = append(channels[:i], channels[i+1:]...)
-			close(ch)
+			// Do not close the channel here to avoid racing with concurrent broadcasts.
 			log.Printf("[EventHub] Unsubscribed from deployment %s (remaining: %d)", deploymentID, len(h.subscriptions[deploymentID]))
 			break
 		}
