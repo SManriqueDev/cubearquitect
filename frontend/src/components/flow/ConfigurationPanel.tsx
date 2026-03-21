@@ -3,9 +3,9 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
 import { Server, Database, Trash2, X } from 'lucide-react';
 import { usePricing } from '@/hooks/usePricing';
+import { cn } from '@/lib/utils';
 import type { FlowNode, AppNodeData, DatabaseNodeData } from '@/types/flow';
 
 interface ConfigurationPanelProps {
@@ -228,14 +228,40 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
           </div>
         )}
 
-        <Card className="p-3 bg-gray-50">
+        <div className="space-y-2">
           <Label className="text-xs font-semibold text-gray-700 uppercase">
             Status
           </Label>
-          <p className={`text-sm font-medium mt-1 ${getStatusColor(selectedNode.status)}`}>
-            {selectedNode.status}
-          </p>
-        </Card>
+          <div className={cn(
+            "inline-flex items-center gap-2 px-3 py-2 rounded-md border",
+            selectedNode.status === "active" && "bg-green-50 border-green-200",
+            selectedNode.status === "inactive" && "bg-gray-50 border-gray-200",
+            selectedNode.status === "error" && "bg-red-50 border-red-200"
+          )}>
+            <span className="relative flex h-2 w-2">
+              <span className={cn(
+                "absolute inline-flex h-full w-full rounded-full opacity-75 animate-pulse",
+                selectedNode.status === "active" && "bg-green-500",
+                selectedNode.status === "inactive" && "bg-gray-400",
+                selectedNode.status === "error" && "bg-red-500"
+              )} />
+              <span className={cn(
+                "relative inline-flex rounded-full h-2 w-2",
+                selectedNode.status === "active" && "bg-green-500",
+                selectedNode.status === "inactive" && "bg-gray-400",
+                selectedNode.status === "error" && "bg-red-500"
+              )} />
+            </span>
+            <span className={cn(
+              "text-sm font-medium capitalize",
+              selectedNode.status === "active" && "text-green-700",
+              selectedNode.status === "inactive" && "text-gray-600",
+              selectedNode.status === "error" && "text-red-700"
+            )}>
+              {selectedNode.status}
+            </span>
+          </div>
+        </div>
       </div>
 
       <div className="sticky bottom-0 bg-white border-t border-gray-100 p-4">
@@ -248,19 +274,6 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
       </div>
     </div>
   );
-}
-
-function getStatusColor(status: string): string {
-  switch (status) {
-    case 'active':
-      return 'text-green-600';
-    case 'inactive':
-      return 'text-gray-500';
-    case 'error':
-      return 'text-red-600';
-    default:
-      return 'text-gray-500';
-  }
 }
 
 export const ConfigurationPanel = memo(ConfigurationPanelComponent);
