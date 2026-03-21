@@ -30,12 +30,61 @@ type VPSCreateRequest struct {
 	CustomCloudinit  string   `json:"custom_cloudinit,omitempty"`
 }
 
+// FloatingIP represents a floating IP in CubePath response
+type FloatingIP struct {
+	Address        string `json:"address"`
+	Netmask        string `json:"netmask"`
+	Type           string `json:"type"`
+	ProtectionType string `json:"protection_type"`
+	IsPrimary      bool   `json:"is_primary"`
+}
+
+// FloatingIPList represents the floating_ips structure in CubePath response
+type FloatingIPList struct {
+	List         []FloatingIP `json:"list"`
+	PricePerHour float64      `json:"price_per_hour"`
+}
+
+// VPS matches the actual CubePath /vps/ response structure
 type VPS struct {
-	ID       int    `json:"id"`
-	Name     string `json:"name"`
-	Status   string `json:"status"`
-	Username string `json:"username"`
-	Label    string `json:"label"`
-	IPv4     string `json:"ipv4"`
-	IPv6     string `json:"ipv6"`
+	ID          int            `json:"id"`
+	Label       string         `json:"label"`
+	Name        string         `json:"name"`
+	Hostname    string         `json:"hostname"`
+	Status      string         `json:"status"`
+	User        string         `json:"user"`
+	Plan        interface{}    `json:"plan"`
+	Template    interface{}    `json:"template"`
+	FloatingIPs FloatingIPList `json:"floating_ips"`
+	SSHKeys     []interface{}  `json:"ssh_keys"`
+	Location    interface{}    `json:"location"`
+	Network     interface{}    `json:"network"`
+	Firewall    []interface{}  `json:"firewall_groups"`
+	
+	// Computed fields for convenience (not in JSON)
+	IPv4 string `json:"-"`
+	IPv6 string `json:"-"`
+}
+
+// ExtractIPs extracts IPv4 and IPv6 from FloatingIPs
+func (v *VPS) ExtractIPs() {
+	for _, ip := range v.FloatingIPs.List {
+		if ip.Type == "IPv4" && ip.IsPrimary {
+			v.IPv4 = ip.Address
+		} else if ip.Type == "IPv6" && ip.IsPrimary {
+			v.IPv6 = ip.Address
+		}
+	}
+}
+
+// VPSCreateResponse is the response from CubePath /vps/create endpoint
+type VPSCreateResponse struct {
+	Detail       string `json:"detail"`
+	VPSID        int    `json:"vps_id"`
+	Name         string `json:"name"`
+	Status       string `json:"status"`
+	Plan         string `json:"plan"`
+	Location     string `json:"location"`
+	IPv4Address  string `json:"ipv4_address"`
+	IPv6Address  string `json:"ipv6_address"`
 }

@@ -9,19 +9,21 @@ import (
 )
 
 type Config struct {
-	Token     string
-	BaseURL   string
-	Port      string
-	ProjectID int
+	Token        string
+	BaseURL      string
+	Port         string
+	ProjectID    int
+	SSHKeyNames  string // Comma-separated SSH key names to use for VPS provisioning
 }
 
 func Load() *Config {
 	_ = godotenv.Load()
 
 	cfg := &Config{
-		Token:   os.Getenv("CUBE_API_TOKEN"),
-		BaseURL: os.Getenv("CUBE_API_URL"),
-		Port:    os.Getenv("PORT"),
+		Token:       os.Getenv("CUBE_API_TOKEN"),
+		BaseURL:     os.Getenv("CUBE_API_URL"),
+		Port:        os.Getenv("PORT"),
+		SSHKeyNames: os.Getenv("CUBE_SSH_KEY_NAMES"),
 	}
 
 	if cfg.Token == "" {
@@ -45,6 +47,10 @@ func Load() *Config {
 	}
 
 	cfg.ProjectID = projectID
+
+	if cfg.SSHKeyNames == "" {
+		log.Println("⚠️  CUBE_SSH_KEY_NAMES not set; VPS will require password authentication")
+	}
 
 	return cfg
 }

@@ -1,0 +1,64 @@
+import { memo } from 'react';
+import { Rocket, Server, Database } from 'lucide-react';
+import { useFlowStore } from '@/stores/flowStore';
+import { useDeploy } from '@/hooks/useDeploy';
+import { createDeployPayload } from '@/utils/nodeUtils';
+import {
+  ToolbarButton,
+  ToolbarAddButton,
+  ToolbarSeparator,
+  ToolbarStats,
+} from './components';
+
+interface FlowToolbarProps {
+  onAddNode?: (type: 'app' | 'database') => void;
+}
+
+export const FlowToolbar = memo(function FlowToolbar({
+  onAddNode,
+}: FlowToolbarProps) {
+  const nodes = useFlowStore((state) => state.nodes);
+  const edges = useFlowStore((state) => state.edges);
+
+  const { mutate: deploy, isPending: isDeploying } = useDeploy();
+
+  const handleDeploy = () => {
+    const payload = createDeployPayload(nodes, edges);
+    deploy(payload);
+  };
+
+  const appCount = nodes.filter((n) => n.type === 'app').length;
+  const dbCount = nodes.filter((n) => n.type === 'database').length;
+  const hasNodes = nodes.length > 0;
+
+  return (
+    <div
+      className="absolute top-4 left-4 z-10 flex items-center gap-2 bg-card rounded-lg border border-border/60 shadow-sm p-2"
+      role="toolbar"
+      aria-label="Flow editor toolbar"
+    >
+      <ToolbarAddButton onAddNode={onAddNode} />
+
+      <ToolbarSeparator />
+
+      <ToolbarButton
+        icon={Rocket}
+        label={isDeploying ? 'Deploying...' : 'Deploy'}
+        variant="deploy"
+        onClick={handleDeploy}
+        disabled={!hasNodes}
+        loading={isDeploying}
+      />
+
+      <ToolbarSeparator />
+
+      <ToolbarStats
+        nodes={[
+          { type: 'app', label: 'Apps', icon: Server, count: appCount },
+          { type: 'database', label: 'DBs', icon: Database, count: dbCount },
+        ]}
+        edgeCount={edges.length}
+      />
+    </div>
+  );
+});
