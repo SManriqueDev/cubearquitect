@@ -38,7 +38,6 @@ const canConnect = (sourceType: NodeType, targetType: NodeType): boolean => {
 
 function FlowCanvasComponent() {
   const { data, isPending, error } = useProjects();
-  const isInitializedRef = useRef(false);
 
   const {
     nodes: storeNodes,
@@ -55,6 +54,10 @@ function FlowCanvasComponent() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
+  const selectedNodeIdRef = useRef(selectedNodeId);
+  useEffect(() => {
+    selectedNodeIdRef.current = selectedNodeId;
+  }, [selectedNodeId]);
 
   const selectedNode: FlowNode | null =
     storeNodes.find((n) => n.id === selectedNodeId) ?? null;
@@ -75,27 +78,28 @@ function FlowCanvasComponent() {
   }, [selectedNodeId, setNodes]);
 
   useEffect(() => {
-    if (data && !isInitializedRef.current) {
-      isInitializedRef.current = true;
-      loadFromApi(data.nodes, data.edges);
+    if (!data) return;
 
-      const initialNodes: Node[] = data.nodes.map((node, idx) => ({
+    loadFromApi(data.nodes, data.edges);
+
+    setNodes((currentNodes) => {
+      const positionMap = new Map(currentNodes.map((n) => [n.id, n.position]));
+      return data.nodes.map((node, idx) => ({
         id: node.id,
         type: node.type,
-        position: { x: (idx % 3) * 350, y: Math.floor(idx / 3) * 300 },
-        data: { ...node, isSelected: false },
+        position: positionMap.get(node.id) ?? { x: (idx % 3) * 350, y: Math.floor(idx / 3) * 300 },
+        data: { ...node, isSelected: node.id === selectedNodeIdRef.current },
       }));
+    });
 
-      const initialEdges: Edge[] = data.edges.map((edge) => ({
+    setEdges(
+      data.edges.map((edge) => ({
         id: edge.id,
         source: edge.source,
         target: edge.target,
         animated: true,
-      }));
-
-      setNodes(initialNodes);
-      setEdges(initialEdges);
-    }
+      }))
+    );
   }, [data, loadFromApi, setNodes, setEdges]);
 
   useEffect(() => {
