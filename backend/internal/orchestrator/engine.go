@@ -137,7 +137,7 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 		return fmt.Errorf("blueprint not found: %s:%s: %w", node.Kind, blueprintName, err)
 	}
 
-	vpsReqInterface, err := blueprint.BuildVPSRequest(nodeID, node.Params)
+	vpsReqInterface, bpMeta, err := blueprint.BuildVPSRequest(nodeID, node.Params)
 	if err != nil {
 		return fmt.Errorf("failed to build VPS request: %w", err)
 	}
@@ -160,7 +160,7 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 	}
 
 	if node.Kind == NodeKindDatabase || node.Kind == NodeKindCache {
-		connStr, err := blueprint.ExtractConnectionString(vpsIP, nil)
+		connStr, err := blueprint.ExtractConnectionString(vpsIP, bpMeta)
 		if err != nil {
 			return fmt.Errorf("failed to extract connection string: %w", err)
 		}

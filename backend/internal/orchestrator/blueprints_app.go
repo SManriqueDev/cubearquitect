@@ -25,7 +25,7 @@ func (bp *NodeBasicBlueprint) Kind() NodeKind     { return NodeKindApp }
 func (bp *NodeBasicBlueprint) Name() string       { return nodeBasicName }
 func (bp *NodeBasicBlueprint) EnvVarName() string { return "APP_URL" }
 
-func (bp *NodeBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error) {
+func (bp *NodeBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]string) (interface{}, map[string]interface{}, error) {
 	cloudInit := bp.generateCloudInit(params)
 
 	truncatedID := nodeID
@@ -52,7 +52,7 @@ func (bp *NodeBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]s
 		req.SSHKeyNames = keyNames
 	}
 
-	return req, nil
+	return req, nil, nil
 }
 
 func (bp *NodeBasicBlueprint) ExtractConnectionString(vpsIP string, _ map[string]interface{}) (string, error) {

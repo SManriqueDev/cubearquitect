@@ -32,7 +32,7 @@ func TestNodeBasicBlueprint_BuildVPSRequest(t *testing.T) {
 	}
 	bp := NewNodeBasicBlueprint(cfg)
 
-	req, err := bp.BuildVPSRequest("app-1", map[string]string{
+	req, _, err := bp.BuildVPSRequest("app-1", map[string]string{
 		"DATABASE_URL": "postgresql://user:pass@db-ip:5432/app_db",
 	})
 	if err != nil {

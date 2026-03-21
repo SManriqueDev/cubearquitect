@@ -1,6 +1,8 @@
 package orchestrator
 
 import (
+	"crypto/rand"
+	"encoding/base64"
 	"fmt"
 	"strings"
 
@@ -12,7 +14,8 @@ const (
 	postgresBasicName = "postgres-basic"
 	postgresPort      = 5432
 	postgresUsername  = "postgres"
-	postgresPassword  = "postgres123!" // TODO: use secrets management
+
+	metaKeyDBPassword = "db_password"
 )
 
 type PostgresBasicBlueprint struct {
@@ -27,10 +30,15 @@ func (bp *PostgresBasicBlueprint) Kind() NodeKind     { return NodeKindDatabase 
 func (bp *PostgresBasicBlueprint) Name() string       { return postgresBasicName }
 func (bp *PostgresBasicBlueprint) EnvVarName() string { return "DATABASE_URL" }
 
-func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error) {
+func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]string) (interface{}, map[string]interface{}, error) {
 	dbName := "app_db"
 	if custom, ok := params["db_name"]; ok {
 		dbName = custom
+	}
+
+	password, err := generatePassword(24)
+	if err != nil {
+		return nil, nil, fmt.Errorf("failed to generate DB password: %w", err)
 	}
 
 	truncatedID := nodeID
@@ -46,7 +54,7 @@ func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[stri
 		Label:           fmt.Sprintf("PostgreSQL (%s)", nodeID),
 		IPv4:            true,
 		EnableBackups:   true,
-		CustomCloudinit: bp.generateCloudInit(dbName),
+		CustomCloudinit: bp.generateCloudInit(dbName, password),
 	}
 
 	if bp.config.SSHKeyNames != "" {
@@ -57,18 +65,27 @@ func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[stri
 		req.SSHKeyNames = keyNames
 	}
 
-	return req, nil
+	meta := map[string]interface{}{
+		metaKeyDBPassword: password,
+	}
+	return req, meta, nil
 }
 
-func (bp *PostgresBasicBlueprint) ExtractConnectionString(vpsIP string, _ map[string]interface{}) (string, error) {
+func (bp *PostgresBasicBlueprint) ExtractConnectionString(vpsIP string, metadata map[string]interface{}) (string, error) {
 	if vpsIP == "" {
 		return "", fmt.Errorf("vpsIP cannot be empty")
 	}
+
+	password, ok := metadata[metaKeyDBPassword].(string)
+	if !ok || password == "" {
+		return "", fmt.Errorf("db_password missing or invalid in metadata")
+	}
+
 	return fmt.Sprintf("postgresql://%s:%s@%s:%d/app_db?sslmode=disable",
-		postgresUsername, postgresPassword, vpsIP, postgresPort), nil
+		postgresUsername, password, vpsIP, postgresPort), nil
 }
 
-func (bp *PostgresBasicBlueprint) generateCloudInit(dbName string) string {
+func (bp *PostgresBasicBlueprint) generateCloudInit(dbName, password string) string {
 	return fmt.Sprintf(`#cloud-config
 package_update: true
 packages:
@@ -92,5 +109,15 @@ runcmd:
   - sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
   - systemctl restart postgresql
   - echo "PostgreSQL setup complete"
-`, dbName, postgresUsername, postgresPassword, postgresUsername, postgresUsername, postgresUsername, dbName, postgresUsername, postgresUsername)
+`, dbName, postgresUsername, password, postgresUsername, postgresUsername, postgresUsername, dbName, postgresUsername, postgresUsername)
+}
+
+// generatePassword returns a URL-safe base64-encoded random string of the
+// requested byte length (the encoded string will be longer).
+func generatePassword(byteLen int) (string, error) {
+	b := make([]byte, byteLen)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
 }

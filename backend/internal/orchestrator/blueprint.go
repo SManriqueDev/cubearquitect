@@ -13,7 +13,11 @@ const (
 type Blueprint interface {
 	Kind() NodeKind
 	Name() string
-	BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error)
+	// BuildVPSRequest constructs the VPS creation payload and returns an opaque
+	// metadata map that must be forwarded to ExtractConnectionString.  The
+	// metadata is used to pass per-deployment secrets (e.g. a generated DB
+	// password) between the two calls without persisting them on the blueprint.
+	BuildVPSRequest(nodeID string, params map[string]string) (interface{}, map[string]interface{}, error)
 	ExtractConnectionString(vpsIP string, metadata map[string]interface{}) (string, error)
 	EnvVarName() string
 }
