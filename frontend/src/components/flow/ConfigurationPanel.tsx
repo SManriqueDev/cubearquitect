@@ -19,7 +19,7 @@ function ConfigurationPanelComponent({
   onUpdateNode,
   onDeleteNode,
 }: ConfigurationPanelProps) {
-  const { pricing, isPending, fetch } = usePricingStore();
+  const { pricing, isPending } = usePricingStore();
 
   if (!selectedNode) {
     return (
