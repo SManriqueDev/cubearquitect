@@ -1,15 +1,15 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchCanvasData } from '@/features/canvas/api/fetchCanvasData';
-import { canvasKeys } from '@/features/canvas/api/queryKeys';
-import type { CanvasData } from '@/types/canvas';
+import { fetchCanvasData } from '@/services/fetchProjects';
+import { canvasKeys } from '@/services/queryKeys';
+import type { CanvasData } from '@/types/flow';
 
-interface UseCanvasQueryResult {
+interface UseProjectsResult {
   data: CanvasData | undefined;
   isPending: boolean;
   error: Error | null;
 }
 
-export function useCanvasQuery(): UseCanvasQueryResult {
+export function useProjects(): UseProjectsResult {
   const { data, isPending, error } = useQuery({
     queryKey: canvasKeys.all,
     queryFn: fetchCanvasData,

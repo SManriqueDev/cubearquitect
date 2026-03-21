@@ -6,7 +6,7 @@ interface CanvasUiState {
   clearSelection: () => void;
 }
 
-export const useCanvasUiStore = create<CanvasUiState>((set) => ({
+export const useFlowStore = create<CanvasUiState>((set) => ({
   selectedNodeId: null,
   setSelectedNodeId: (nodeId) => {
     set({ selectedNodeId: nodeId });

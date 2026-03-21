@@ -1,5 +1,5 @@
-import { Canvas } from '@/components/Canvas/Canvas';
+import { FlowCanvas } from '@/components/flow/FlowCanvas';
 
 export default function App() {
-  return <Canvas />;
+  return <FlowCanvas />;
 }

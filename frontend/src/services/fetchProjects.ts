@@ -1,4 +1,4 @@
-import type { CanvasData, CanvasEdge, CanvasNode } from '@/types/canvas';
+import type { CanvasData, CanvasEdge, CanvasNode } from '@/types/flow';
 
 interface FloatingIP {
   address: string;

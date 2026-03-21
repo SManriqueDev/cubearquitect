@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import type { CanvasNode } from '@/types/canvas';
+import type { CanvasNode } from '@/types/flow';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
@@ -34,7 +34,7 @@ const statusConfig = {
   },
 };
 
-export function ConfigSidebar({ selectedNode }: ConfigSidebarProps) {
+export function ConfigurationPanel({ selectedNode }: ConfigSidebarProps) {
   const [editedNode, setEditedNode] = useState<CanvasNode | null>(selectedNode);
 
   useEffect(() => {

@@ -3,8 +3,8 @@ import { Handle, Position } from '@xyflow/react';
 import type { NodeProps } from '@xyflow/react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Database, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import type { CanvasNode } from '@/types/canvas';
+import { Server, CheckCircle, AlertCircle, Clock } from 'lucide-react';
+import type { CanvasNode } from '@/types/flow';
 
 const statusIcons: Record<string, React.ComponentType<{ className?: string }>> = {
   active: CheckCircle,
@@ -18,7 +18,7 @@ const statusColors: Record<string, string> = {
   error: 'text-red-500',
 };
 
-function DatabaseNodeComponent({
+function AppNodeComponent({
   data,
 }: NodeProps) {
   const nodeData = data as CanvasNode;
@@ -27,11 +27,11 @@ function DatabaseNodeComponent({
 
   return (
     <div className={`transition-all ${nodeData.isSelected ? 'ring-2 ring-blue-500' : ''}`}>
-      <Card className="p-4 w-48 border-l-4 border-l-purple-600">
+      <Card className="p-4 w-48">
         <div className="space-y-2">
           <div className="flex items-center justify-between gap-2">
             <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Database className="w-4 h-4 flex-shrink-0 text-purple-600" />
+              <Server className="w-4 h-4 flex-shrink-0 text-blue-500" />
               <h3 className="font-bold text-sm truncate">{nodeData.label}</h3>
             </div>
             <StatusIcon className={`w-4 h-4 flex-shrink-0 ${statusColor}`} />
@@ -58,6 +58,6 @@ function DatabaseNodeComponent({
   );
 }
 
-const DatabaseNode = memo(DatabaseNodeComponent);
+const AppNode = memo(AppNodeComponent);
 
-export default DatabaseNode;
+export default AppNode;

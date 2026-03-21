@@ -9,23 +9,23 @@ import {
 import '@xyflow/react/dist/style.css';
 import type { Node, Edge, NodeTypes } from '@xyflow/react';
 
-import { useCanvasQuery } from '@/features/canvas/hooks/useCanvasQuery';
-import { useCanvasUiStore } from '@/features/canvas/store/canvasUiStore';
-import AppNode from './AppNode';
-import DatabaseNode from './DatabaseNode';
-import { ConfigSidebar } from './ConfigSidebar';
+import { useProjects } from '@/hooks/useProjects';
+import { useFlowStore } from '@/stores/flowStore';
+import AppNode from '@/components/nodes/AppNode';
+import DatabaseNode from '@/components/nodes/DatabaseNode';
+import { ConfigurationPanel } from './ConfigurationPanel';
 import { normalizeEdges } from '@/lib/edgeNormalizer';
-import type { CanvasNode } from '@/types/canvas';
+import type { CanvasNode } from '@/types/flow';
 
 const nodeTypes: NodeTypes = {
   app: AppNode,
   database: DatabaseNode,
 };
 
-function CanvasComponent() {
-  const { data, isPending, error } = useCanvasQuery();
-  const selectedNodeId = useCanvasUiStore((state) => state.selectedNodeId);
-  const setSelectedNodeId = useCanvasUiStore((state) => state.setSelectedNodeId);
+function FlowCanvasComponent() {
+  const { data, isPending, error } = useProjects();
+  const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
+  const setSelectedNodeId = useFlowStore((state) => state.setSelectedNodeId);
 
   const emptyNodes: Node[] = [];
   const emptyEdges: Edge[] = [];
@@ -133,9 +133,9 @@ function CanvasComponent() {
           <Controls />
         </ReactFlow>
       </div>
-      <ConfigSidebar selectedNode={selectedNode} onUpdateNode={handleUpdateNode} />
+      <ConfigurationPanel selectedNode={selectedNode} onUpdateNode={handleUpdateNode} />
     </div>
   );
 }
 
-export const Canvas = memo(CanvasComponent);
+export const FlowCanvas = memo(FlowCanvasComponent);
