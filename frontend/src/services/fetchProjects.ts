@@ -1,4 +1,4 @@
-import type { CanvasData, CanvasEdge, CanvasNode } from '@/types/flow';
+import type { CanvasData, FlowNode, FlowEdge } from '@/types/flow';
 
 interface FloatingIP {
   address: string;
@@ -55,8 +55,8 @@ export async function fetchCanvasData(): Promise<CanvasData> {
     }
 
     const projects: ProjectResponse[] = await response.json();
-    const nodes: CanvasNode[] = [];
-    const edges: CanvasEdge[] = [];
+    const nodes: FlowNode[] = [];
+    const edges: FlowEdge[] = [];
 
     projects.forEach((project) => {
       const projectId = project.project.id;
@@ -72,11 +72,15 @@ export async function fetchCanvasData(): Promise<CanvasData> {
         nodes.push({
           id: nodeId,
           type: 'app',
-          label: vps.name || vps.label,
+          name: vps.name || vps.label,
+          label: vps.label || vps.name,
+          planName: vps.plan?.plan_name || 'default',
+          templateName: 'ubuntu-24', // Default template
+          locationName: vps.location?.location_name || 'us-mia-1',
           ip: primaryIP,
-          plan: vps.plan?.plan_name || 'default',
           status: mapVPSStatus(vps.status),
-          region: vps.location?.location_name || '',
+          ipv4: true,
+          enableBackups: false,
           projectId,
         });
 
@@ -110,4 +114,3 @@ function mapVPSStatus(status: string): 'active' | 'inactive' | 'error' {
   }
   return 'inactive';
 }
-

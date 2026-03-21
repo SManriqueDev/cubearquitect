@@ -1,88 +1,201 @@
-import { memo, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect, useRef } from 'react';
 import {
   ReactFlow,
   Background,
   Controls,
+  MiniMap,
   useNodesState,
   useEdgesState,
+  addEdge,
+  type Connection,
+  type Node,
+  type Edge,
+  type NodeTypes,
+  type NodeChange,
+  type EdgeChange,
+  type OnNodesChange,
+  type OnEdgesChange,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
-import type { Node, Edge, NodeTypes } from '@xyflow/react';
 
 import { useProjects } from '@/hooks/useProjects';
 import { useFlowStore } from '@/stores/flowStore';
+import { useNodeCount, useEdgeCount } from '@/hooks/useFlowStore';
 import AppNode from '@/components/nodes/AppNode';
 import DatabaseNode from '@/components/nodes/DatabaseNode';
+import { FlowToolbar } from './FlowToolbar';
 import { ConfigurationPanel } from './ConfigurationPanel';
-import { normalizeEdges } from '@/lib/edgeNormalizer';
-import type { CanvasNode } from '@/types/flow';
+import type { FlowNode, NodeType } from '@/types/flow';
 
 const nodeTypes: NodeTypes = {
   app: AppNode,
   database: DatabaseNode,
 };
 
+const canConnect = (sourceType: NodeType, targetType: NodeType): boolean => {
+  return !(sourceType === 'database' && targetType === 'database');
+};
+
 function FlowCanvasComponent() {
   const { data, isPending, error } = useProjects();
+  const isInitializedRef = useRef(false);
+
+  const {
+    nodes: storeNodes,
+    setSelectedNodeId,
+    addNode,
+    updateNode,
+    removeNode,
+    addEdge: addStoreEdge,
+    removeEdge: removeStoreEdge,
+    loadFromApi,
+  } = useFlowStore();
+
+  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+
   const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
-  const setSelectedNodeId = useFlowStore((state) => state.setSelectedNodeId);
+  const nodeCount = useNodeCount();
+  const edgeCount = useEdgeCount();
 
-  const emptyNodes: Node[] = [];
-  const emptyEdges: Edge[] = [];
-  
-  const [nodes, setNodes, onNodesChange] = useNodesState(emptyNodes);
-  const [, , onEdgesChange] = useEdgesState(emptyEdges);
+  const selectedNode: FlowNode | null =
+    storeNodes.find((n) => n.id === selectedNodeId) ?? null;
 
-  // Optimize re-renders: only when data.nodes changes, not selectedNode
+  // Sync selection state to React Flow nodes
   useEffect(() => {
-    if (!data?.nodes || data.nodes.length === 0) {
-      setNodes([]);
-      return;
+    setNodes((nds) =>
+      nds.map((n) => ({
+        ...n,
+        data: {
+          ...n.data,
+          isSelected: n.id === selectedNodeId,
+        },
+      }))
+    );
+  }, [selectedNodeId, setNodes]);
+
+  useEffect(() => {
+    if (data && !isInitializedRef.current) {
+      isInitializedRef.current = true;
+      loadFromApi(data.nodes, data.edges);
+
+      const initialNodes: Node[] = data.nodes.map((node, idx) => ({
+        id: node.id,
+        type: node.type,
+        position: { x: (idx % 3) * 350, y: Math.floor(idx / 3) * 300 },
+        data: { ...node, isSelected: false },
+      }));
+
+      const initialEdges: Edge[] = data.edges.map((edge) => ({
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        animated: true,
+      }));
+
+      setNodes(initialNodes);
+      setEdges(initialEdges);
     }
+  }, [data, loadFromApi, setNodes, setEdges]);
 
-    const newNodes: Node[] = data.nodes.map((node, idx) => ({
-      id: node.id,
-      data: { ...node, isSelected: selectedNodeId === node.id },
-      position: {
-        x: (idx % 3) * 400,
-        y: Math.floor(idx / 3) * 400,
-      },
-      type: node.type,
-    }));
+  const handleConnect = useCallback(
+    (connection: Connection) => {
+      if (!connection.source || !connection.target) return;
 
-    setNodes(newNodes);
-  }, [data?.nodes, setNodes, selectedNodeId]);
+      const sourceNode = nodes.find((n) => n.id === connection.source);
+      const targetNode = nodes.find((n) => n.id === connection.target);
 
-  const selectedNode: CanvasNode | null =
-    data?.nodes?.find((item) => item.id === selectedNodeId) ?? null;
+      if (!sourceNode || !targetNode) return;
+
+      const sourceType = sourceNode.type as NodeType;
+      const targetType = targetNode.type as NodeType;
+
+      if (!canConnect(sourceType, targetType)) return;
+
+      const newEdge = { ...connection, animated: true };
+      setEdges((eds) => addEdge(newEdge, eds));
+      addStoreEdge(connection.source, connection.target);
+    },
+    [nodes, setEdges, addStoreEdge]
+  );
+
+  const handleNodesChange: OnNodesChange = useCallback(
+    (changes: NodeChange[]) => {
+      onNodesChange(changes);
+
+      const removeChanges = changes.filter((c) => c.type === 'remove');
+      if (removeChanges.length > 0) {
+        removeChanges.forEach((change) => {
+          if (change.type === 'remove') {
+            removeNode(change.id);
+          }
+        });
+      }
+    },
+    [onNodesChange, removeNode]
+  );
+
+  const handleEdgesChange: OnEdgesChange = useCallback(
+    (changes: EdgeChange[]) => {
+      onEdgesChange(changes);
+
+      changes.forEach((change) => {
+        if (change.type === 'remove') {
+          removeStoreEdge(change.id);
+        }
+      });
+    },
+    [onEdgesChange, removeStoreEdge]
+  );
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
       setSelectedNodeId(node.id);
-      setNodes((nds) =>
-        nds.map((n) => {
-          const currentData = n.data as CanvasNode;
-          return {
-            ...n,
-            data: { ...currentData, isSelected: n.id === node.id },
-          };
-        })
-      );
     },
-    [setNodes, setSelectedNodeId]
+    [setSelectedNodeId]
+  );
+
+  const handlePaneClick = useCallback(() => {
+    setSelectedNodeId(null);
+  }, [setSelectedNodeId]);
+
+  const handleAddNode = useCallback(
+    (type: 'app' | 'database') => {
+      const position = { x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 };
+      const newNode = addNode(type, position);
+
+      const flowNode: Node = {
+        id: newNode.id,
+        type: newNode.type,
+        position,
+        data: { ...newNode, isSelected: true },
+      };
+
+      setNodes((nds) => [...nds, flowNode]);
+      setSelectedNodeId(newNode.id);
+    },
+    [addNode, setNodes, setSelectedNodeId]
   );
 
   const handleUpdateNode = useCallback(
-    (updatedNode: CanvasNode) => {
+    (updatedNode: FlowNode) => {
+      updateNode(updatedNode.id, updatedNode);
       setNodes((nds) =>
         nds.map((n) =>
-          n.id === updatedNode.id
-            ? { ...n, data: updatedNode }
-            : n
+          n.id === updatedNode.id ? { ...n, data: { ...updatedNode, isSelected: n.data.isSelected } } : n
         )
       );
     },
-    [setNodes]
+    [updateNode, setNodes]
+  );
+
+  const handleDeleteNode = useCallback(
+    (id: string) => {
+      removeNode(id);
+      setNodes((nds) => nds.filter((n) => n.id !== id));
+      setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
+    },
+    [removeNode, setNodes, setEdges]
   );
 
   if (isPending) {
@@ -90,7 +203,7 @@ function FlowCanvasComponent() {
       <div className="w-full h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4" />
-          <p className="text-gray-600 text-lg">Loading canvas...</p>
+          <p className="text-gray-600 text-lg">Loading infrastructure...</p>
         </div>
       </div>
     );
@@ -107,33 +220,31 @@ function FlowCanvasComponent() {
     );
   }
 
-  if (!data || data.nodes.length === 0) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center bg-gray-50">
-        <p className="text-gray-600">No nodes found</p>
-      </div>
-    );
-  }
-
-  const edges = data.edges ? normalizeEdges(data.edges) : [];
-
   return (
-    <div className="flex w-full h-screen bg-white">
-      <div className="flex-1">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={onNodesChange}
-          onEdgesChange={onEdgesChange}
-          onNodeClick={handleNodeClick}
-          nodeTypes={nodeTypes}
-          fitView
-        >
-          <Background />
-          <Controls />
-        </ReactFlow>
-      </div>
-      <ConfigurationPanel selectedNode={selectedNode} onUpdateNode={handleUpdateNode} />
+    <div className="flex w-full h-screen bg-gray-50">
+      <ReactFlow
+        nodes={nodes}
+        edges={edges}
+        onNodesChange={handleNodesChange}
+        onEdgesChange={handleEdgesChange}
+        onConnect={handleConnect}
+        onNodeClick={handleNodeClick}
+        onPaneClick={handlePaneClick}
+        nodeTypes={nodeTypes}
+        fitView
+      >
+        <Background />
+        <Controls />
+        <MiniMap nodeStrokeWidth={3} zoomable pannable />
+      </ReactFlow>
+
+      <FlowToolbar onAddNode={handleAddNode} nodeCount={nodeCount} edgeCount={edgeCount} />
+
+      <ConfigurationPanel
+        selectedNode={selectedNode}
+        onUpdateNode={handleUpdateNode}
+        onDeleteNode={handleDeleteNode}
+      />
     </div>
   );
 }

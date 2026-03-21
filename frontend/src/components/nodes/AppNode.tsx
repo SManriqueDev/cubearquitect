@@ -1,60 +1,24 @@
 import { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
-import type { NodeProps } from '@xyflow/react';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Server, CheckCircle, AlertCircle, Clock } from 'lucide-react';
-import type { CanvasNode } from '@/types/flow';
+import { Server } from 'lucide-react';
+import { BaseNode } from './BaseNode';
+import type { AppNodeData } from '@/types/flow';
 
-const statusIcons: Record<string, React.ComponentType<{ className?: string }>> = {
-  active: CheckCircle,
-  inactive: Clock,
-  error: AlertCircle,
-};
+interface AppNodeProps {
+  data: AppNodeData;
+}
 
-const statusColors: Record<string, string> = {
-  active: 'text-green-500',
-  inactive: 'text-gray-400',
-  error: 'text-red-500',
-};
-
-function AppNodeComponent({
-  data,
-}: NodeProps) {
-  const nodeData = data as CanvasNode;
-  const StatusIcon = statusIcons[nodeData.status] || AlertCircle;
-  const statusColor = statusColors[nodeData.status] || 'text-gray-400';
-
+function AppNodeComponent({ data }: AppNodeProps) {
   return (
-    <div className={`transition-all ${nodeData.isSelected ? 'ring-2 ring-blue-500' : ''}`}>
-      <Card className="p-4 w-48">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 flex-1 min-w-0">
-              <Server className="w-4 h-4 flex-shrink-0 text-blue-500" />
-              <h3 className="font-bold text-sm truncate">{nodeData.label}</h3>
-            </div>
-            <StatusIcon className={`w-4 h-4 flex-shrink-0 ${statusColor}`} />
-          </div>
-
-          {nodeData.ip && (
-            <p className="text-xs text-gray-600 font-mono">{nodeData.ip}</p>
-          )}
-
-          <div className="flex gap-2 flex-wrap">
-            <Badge variant="outline" className="text-xs">
-              {nodeData.plan}
-            </Badge>
-            <Badge variant="secondary" className="text-xs">
-              {nodeData.status}
-            </Badge>
-          </div>
-        </div>
-      </Card>
-
-      <Handle type="target" position={Position.Top} />
-      <Handle type="source" position={Position.Bottom} />
-    </div>
+    <BaseNode
+      data={data}
+      icon={<Server className="w-4 h-4" />}
+      iconColor="text-blue-500"
+    >
+      {data.ip && (
+        <p className="text-xs text-gray-600 font-mono">{data.ip}</p>
+      )}
+      <p className="text-xs text-gray-500 truncate">{data.templateName}</p>
+    </BaseNode>
   );
 }
 
