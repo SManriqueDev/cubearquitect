@@ -24,24 +24,28 @@
 
 ## High-level architecture
 
-- This repo is a two-app setup (no monorepo tool): a Go API in `backend/` and a React/Vite app in `frontend/`, coordinated from the root `Makefile`.
-- Backend entrypoint is `backend/cmd/api/main.go` using Fiber v2:
-  - Loads env via `godotenv.Load()`
-  - Applies global CORS middleware
-  - Exposes `GET /health` returning JSON `{status, api}`
-  - Binds to `PORT` env var, defaulting to `8080`
+- This repository is split into two apps coordinated by the root `Makefile`:
+  - `backend/`: Fiber API service in Go
+  - `frontend/`: React + Vite TypeScript app
+- Backend request flow:
+  - Entry point: `backend/cmd/api/main.go`
+  - Config loading: `backend/internal/config/config.go`
+  - External API integration: `backend/internal/cubepath/client.go`
+  - The API initializes one CubePath client at startup and reuses it in handlers.
+- Current backend HTTP surface:
+  - `GET /health` returns `{"status":"alive"}`
+  - `GET /api/projects` proxies to CubePath `/projects/` via the internal client
 - Frontend entrypoint is `frontend/src/main.tsx` mounting `App` under `StrictMode`.
-- UI root (`frontend/src/App.tsx`) is currently a full-viewport React Flow canvas (`@xyflow/react`) with initial graph nodes and built-in controls/background.
-- Dev runtime assumptions:
-  - Frontend Vite server runs on `5173` and `host: true`
-  - Backend defaults to `8080`
-  - Vite uses polling file watch (`usePolling: true`) for container/volume-friendly reload behavior
+- Current frontend app (`frontend/src/App.tsx`) is a full-viewport React Flow canvas with local initial nodes; no frontend-side data fetching is wired yet.
 
 ## Key repository conventions
 
-- Keep backend executable code rooted at `cmd/api/main.go` unless/until package structure is expanded.
-- Keep API health contract stable (`/health` with `status` and `api`) because it is the only explicit backend contract currently present.
-- Use env-driven backend port (`PORT`) and preserve default fallback behavior.
+- Backend configuration conventions:
+  - `CUBE_API_TOKEN` is required at startup (app exits if missing).
+  - `CUBE_API_URL` defaults to `https://api.cubepath.com` when unset.
+  - `PORT` defaults to `8080` when unset.
+- Keep backend integration logic in `internal/cubepath/client.go`; HTTP handlers should call client methods instead of duplicating request/header/timeout logic.
+- Backend middleware baseline is `logger` + `cors` in `cmd/api/main.go`; keep this order unless there is a clear reason to change it.
 - Frontend TypeScript is strict (`strict`, `noUnusedLocals`, `noUnusedParameters`, `noUncheckedSideEffectImports`); keep new code compatible with these compiler checks.
 - Frontend linting uses `eslint.config.js` flat config with `typescript-eslint`, `react-hooks`, and `react-refresh`; align new files with this ruleset.
-- Root workflow expectation is Makefile-first for common dev tasks (`make install`, `make dev`) instead of custom ad-hoc scripts.
+- Prefer root Make targets (`make install`, `make dev`, `make dev-backend`, `make dev-frontend`) for local workflows so backend/frontend commands stay consistent.
