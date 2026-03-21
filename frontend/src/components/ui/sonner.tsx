@@ -1,22 +1,47 @@
-import { Toaster as SonnerToasterComponent } from "sonner";
+import { useTheme } from "next-themes"
+import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { CircleCheckIcon, InfoIcon, TriangleAlertIcon, OctagonXIcon, Loader2Icon } from "lucide-react"
 
-export function SonnerToaster() {
+const Toaster = ({ ...props }: ToasterProps) => {
+  const { theme = "system" } = useTheme()
+
   return (
-    <SonnerToasterComponent
-      position="bottom-right"
+    <Sonner
+      theme={theme as ToasterProps["theme"]}
+      className="toaster group"
+      icons={{
+        success: (
+          <CircleCheckIcon className="size-4" />
+        ),
+        info: (
+          <InfoIcon className="size-4" />
+        ),
+        warning: (
+          <TriangleAlertIcon className="size-4" />
+        ),
+        error: (
+          <OctagonXIcon className="size-4" />
+        ),
+        loading: (
+          <Loader2Icon className="size-4 animate-spin" />
+        ),
+      }}
+      style={
+        {
+          "--normal-bg": "var(--popover)",
+          "--normal-text": "var(--popover-foreground)",
+          "--normal-border": "var(--border)",
+          "--border-radius": "var(--radius)",
+        } as React.CSSProperties
+      }
       toastOptions={{
-        unstyled: true,
         classNames: {
-          toast: "flex w-full p-4 rounded-lg border bg-background text-foreground shadow-lg",
-          title: "text-sm font-semibold",
-          description: "text-sm opacity-90",
-          actionButton: "bg-primary text-primary-foreground text-sm font-medium px-3 py-1 rounded-md",
-          cancelButton: "bg-muted text-muted-foreground text-sm font-medium px-3 py-1 rounded-md",
-          success: "border-green-500/20 bg-green-500/10",
-          error: "border-red-500/20 bg-red-500/10",
-          warning: "border-yellow-500/20 bg-yellow-500/10",
+          toast: "cn-toast",
         },
       }}
+      {...props}
     />
-  );
+  )
 }
+
+export { Toaster }
