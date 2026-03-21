@@ -17,11 +17,11 @@ export async function fetchPricing(): Promise<PricingData> {
             price_per_hour: string;
           }>;
         }>;
-        templates: Array<{
-          template_name: string;
-          os_name: string;
-          version: string;
-        }>;
+      }>;
+      templates: Array<{
+        template_name: string;
+        os_name: string;
+        version: string;
       }>;
     };
   }>('/api/pricing');
@@ -43,11 +43,13 @@ export async function fetchPricing(): Promise<PricingData> {
         }
       });
     });
-    loc.templates.forEach((tmpl) => {
-      if (!templates.some((t) => t.template_name === tmpl.template_name)) {
-        templates.push(tmpl);
-      }
-    });
+  });
+
+  // Templates are global, not per-location
+  data.vps.templates.forEach((tmpl) => {
+    if (!templates.some((t) => t.template_name === tmpl.template_name)) {
+      templates.push(tmpl);
+    }
   });
 
   return { locations, plans, templates };

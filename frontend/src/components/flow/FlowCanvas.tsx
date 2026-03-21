@@ -20,6 +20,7 @@ import '@xyflow/react/dist/style.css';
 
 import { useProjects } from '@/hooks/useProjects';
 import { useFlowStore } from '@/stores/flowStore';
+import { usePricingStore } from '@/stores/pricingStore';
 import { useNodeCount, useEdgeCount } from '@/hooks/useFlowStore';
 import AppNode from '@/components/nodes/AppNode';
 import DatabaseNode from '@/components/nodes/DatabaseNode';
@@ -61,6 +62,8 @@ function FlowCanvasComponent() {
   const selectedNode: FlowNode | null =
     storeNodes.find((n) => n.id === selectedNodeId) ?? null;
 
+  const { pricing, fetch: fetchPricing } = usePricingStore();
+
   // Sync selection state to React Flow nodes
   useEffect(() => {
     setNodes((nds) =>
@@ -97,6 +100,12 @@ function FlowCanvasComponent() {
       setEdges(initialEdges);
     }
   }, [data, loadFromApi, setNodes, setEdges]);
+
+  useEffect(() => {
+    if (!pricing) {
+      fetchPricing();
+    }
+  }, [pricing, fetchPricing]);
 
   const handleConnect = useCallback(
     (connection: Connection) => {

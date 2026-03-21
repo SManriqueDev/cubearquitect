@@ -3,8 +3,8 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Server, Database, Trash2, X } from 'lucide-react';
-import { usePricing } from '@/hooks/usePricing';
+import { Server, Database, Trash2, X, Loader2 } from 'lucide-react';
+import { usePricingStore } from '@/stores/pricingStore';
 import { cn } from '@/lib/utils';
 import type { FlowNode, AppNodeData, DatabaseNodeData } from '@/types/flow';
 
@@ -19,7 +19,7 @@ function ConfigurationPanelComponent({
   onUpdateNode,
   onDeleteNode,
 }: ConfigurationPanelProps) {
-  const { data: pricing } = usePricing();
+  const { pricing, isPending, fetch } = usePricingStore();
 
   if (!selectedNode) {
     return (
@@ -31,6 +31,15 @@ function ConfigurationPanelComponent({
           <p className="text-gray-500 text-sm font-medium">No node selected</p>
           <p className="text-gray-400 text-xs">Click on a node to configure</p>
         </div>
+      </div>
+    );
+  }
+
+  if (isPending) {
+    return (
+      <div className="w-80 bg-white border-l border-gray-200 p-8 flex flex-col items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin text-gray-400" />
+        <p className="mt-3 text-gray-500 text-sm">Loading options...</p>
       </div>
     );
   }
@@ -137,6 +146,9 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
             className="w-full h-10 px-3 text-sm border border-gray-200 rounded-md bg-white"
           >
             <option value="">Select plan</option>
+            {formData.planName && !pricing?.plans.some(p => p.plan_name === formData.planName) && (
+              <option value={formData.planName}>{formData.planName} (current)</option>
+            )}
             {pricing?.plans.map((plan) => (
               <option key={plan.plan_name} value={plan.plan_name}>
                 {plan.plan_name} ({plan.cpu} CPU, {plan.ram} RAM)
@@ -156,6 +168,9 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
             className="w-full h-10 px-3 text-sm border border-gray-200 rounded-md bg-white"
           >
             <option value="">Select region</option>
+            {formData.locationName && !pricing?.locations.some(l => l.location_name === formData.locationName) && (
+              <option value={formData.locationName}>{formData.locationName} (current)</option>
+            )}
             {pricing?.locations.map((loc) => (
               <option key={loc.location_name} value={loc.location_name}>
                 {loc.location_name} - {loc.description}
@@ -177,6 +192,9 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
                 className="w-full h-10 px-3 text-sm border border-gray-200 rounded-md bg-white"
               >
                 <option value="">Select template</option>
+                {(formData as AppNodeData).templateName && !pricing?.templates.some(t => t.template_name === (formData as AppNodeData).templateName) && (
+                  <option value={(formData as AppNodeData).templateName}>{(formData as AppNodeData).templateName} (current)</option>
+                )}
                 {pricing?.templates.map((tmpl) => (
                   <option key={tmpl.template_name} value={tmpl.template_name}>
                     {tmpl.os_name} {tmpl.version}
