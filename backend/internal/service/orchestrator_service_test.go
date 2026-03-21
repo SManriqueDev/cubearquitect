@@ -1,18 +1,36 @@
 package service
 
 import (
+	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/SManriqueDev/cubearchitect/internal/config"
-	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 	"github.com/SManriqueDev/cubearchitect/internal/orchestrator"
 )
 
-func TestOrchestratorService_StartDeployment(t *testing.T) {
-	// Create a mock client
-	client := cubepath.NewClient("https://api.example.com", "fake-token")
+// stubCubePathClient is a no-op ClientInterface implementation for unit tests.
+// It returns an immediate error for all calls so that the background execution
+// goroutine spawned by StartDeployment fails fast without making real HTTP calls.
+type stubCubePathClient struct{}
 
-	// Create a minimal config for testing
+func (s *stubCubePathClient) Get(path string) (json.RawMessage, error) {
+	return nil, errors.New("stub: no HTTP calls in unit tests")
+}
+func (s *stubCubePathClient) Post(path string, body interface{}) (json.RawMessage, error) {
+	return nil, errors.New("stub: no HTTP calls in unit tests")
+}
+func (s *stubCubePathClient) Put(path string, body interface{}) (json.RawMessage, error) {
+	return nil, errors.New("stub: no HTTP calls in unit tests")
+}
+func (s *stubCubePathClient) Patch(path string, body interface{}) (json.RawMessage, error) {
+	return nil, errors.New("stub: no HTTP calls in unit tests")
+}
+func (s *stubCubePathClient) Delete(path string) (json.RawMessage, error) {
+	return nil, errors.New("stub: no HTTP calls in unit tests")
+}
+
+func newTestOrchestratorService() *OrchestratorService {
 	cfg := &config.Config{
 		Token:       "fake-token",
 		BaseURL:     "https://api.example.com",
@@ -20,11 +38,12 @@ func TestOrchestratorService_StartDeployment(t *testing.T) {
 		ProjectID:   123,
 		SSHKeyNames: "",
 	}
+	return NewOrchestratorService(&stubCubePathClient{}, 123, cfg)
+}
 
-	// Create orchestrator service
-	svc := NewOrchestratorService(client, 123, cfg)
+func TestOrchestratorService_StartDeployment(t *testing.T) {
+	svc := newTestOrchestratorService()
 
-	// Create a deployment payload
 	payload := &orchestrator.DeployPayload{
 		Nodes: []orchestrator.DeployNode{
 			{
@@ -49,7 +68,6 @@ func TestOrchestratorService_StartDeployment(t *testing.T) {
 		},
 	}
 
-	// Start deployment
 	deploymentID, err := svc.StartDeployment(payload)
 	if err != nil {
 		t.Fatalf("failed to start deployment: %v", err)
@@ -59,7 +77,6 @@ func TestOrchestratorService_StartDeployment(t *testing.T) {
 		t.Fatal("deployment ID should not be empty")
 	}
 
-	// Get deployment status
 	status, err := svc.GetDeploymentStatus(deploymentID)
 	if err != nil {
 		t.Fatalf("failed to get status: %v", err)
@@ -86,15 +103,7 @@ func TestOrchestratorService_StartDeployment(t *testing.T) {
 }
 
 func TestOrchestratorService_ValidationErrors(t *testing.T) {
-	client := cubepath.NewClient("https://api.example.com", "fake-token")
-	cfg := &config.Config{
-		Token:       "fake-token",
-		BaseURL:     "https://api.example.com",
-		Port:        "8080",
-		ProjectID:   123,
-		SSHKeyNames: "",
-	}
-	svc := NewOrchestratorService(client, 123, cfg)
+	svc := newTestOrchestratorService()
 
 	tests := []struct {
 		name    string

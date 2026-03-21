@@ -9,6 +9,16 @@ import (
 	"time"
 )
 
+// ClientInterface defines the HTTP operations used by services and the orchestrator engine.
+// Using this interface instead of *Client allows tests to inject stub implementations.
+type ClientInterface interface {
+	Get(path string) (json.RawMessage, error)
+	Post(path string, body interface{}) (json.RawMessage, error)
+	Put(path string, body interface{}) (json.RawMessage, error)
+	Patch(path string, body interface{}) (json.RawMessage, error)
+	Delete(path string) (json.RawMessage, error)
+}
+
 type Client struct {
 	baseURL    string
 	token      string

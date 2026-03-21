@@ -26,7 +26,7 @@ type deploymentState struct {
 	Error     error
 }
 
-func NewOrchestratorService(client *cubepath.Client, projectID int, cfg *config.Config) *OrchestratorService {
+func NewOrchestratorService(client cubepath.ClientInterface, projectID int, cfg *config.Config) *OrchestratorService {
 	registry := orchestrator.NewBlueprintRegistry()
 
 	registry.Register(orchestrator.NewPostgresBasicBlueprint(cfg))

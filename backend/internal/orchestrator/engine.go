@@ -12,13 +12,13 @@ import (
 )
 
 type DeploymentEngine struct {
-	client    *cubepath.Client
+	client    cubepath.ClientInterface
 	registry  *BlueprintRegistry
 	projectID int
 	eventHub  *EventHub
 }
 
-func NewDeploymentEngine(client *cubepath.Client, projectID int, registry *BlueprintRegistry) *DeploymentEngine {
+func NewDeploymentEngine(client cubepath.ClientInterface, projectID int, registry *BlueprintRegistry) *DeploymentEngine {
 	return &DeploymentEngine{
 		client:    client,
 		projectID: projectID,
