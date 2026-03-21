@@ -148,8 +148,7 @@ func (s *OrchestratorService) validatePayload(payload *orchestrator.DeployPayloa
 		nodeIDs[node.ID] = true
 
 		if node.Kind != orchestrator.NodeKindApp &&
-			node.Kind != orchestrator.NodeKindDatabase &&
-			node.Kind != orchestrator.NodeKindCache {
+			node.Kind != orchestrator.NodeKindDatabase {
 			return fmt.Errorf("unknown node kind: %s", node.Kind)
 		}
 	}
