@@ -1,4 +1,4 @@
-import { memo, useState, useCallback, useEffect } from 'react';
+import { memo, useCallback, useEffect } from 'react';
 import {
   ReactFlow,
   Background,
@@ -9,7 +9,8 @@ import {
 import '@xyflow/react/dist/style.css';
 import type { Node, Edge, NodeTypes } from '@xyflow/react';
 
-import { useCanvasQuery } from '@/hooks/useCanvasQuery';
+import { useCanvasQuery } from '@/features/canvas/hooks/useCanvasQuery';
+import { useCanvasUiStore } from '@/features/canvas/store/canvasUiStore';
 import AppNode from './AppNode';
 import DatabaseNode from './DatabaseNode';
 import { ConfigSidebar } from './ConfigSidebar';
@@ -23,7 +24,8 @@ const nodeTypes: NodeTypes = {
 
 function CanvasComponent() {
   const { data, isPending, error } = useCanvasQuery();
-  const [selectedNode, setSelectedNode] = useState<CanvasNode | null>(null);
+  const selectedNodeId = useCanvasUiStore((state) => state.selectedNodeId);
+  const setSelectedNodeId = useCanvasUiStore((state) => state.setSelectedNodeId);
 
   const emptyNodes: Node[] = [];
   const emptyEdges: Edge[] = [];
@@ -40,7 +42,7 @@ function CanvasComponent() {
 
     const newNodes: Node[] = data.nodes.map((node, idx) => ({
       id: node.id,
-      data: { ...node, isSelected: selectedNode?.id === node.id },
+      data: { ...node, isSelected: selectedNodeId === node.id },
       position: {
         x: (idx % 3) * 400,
         y: Math.floor(idx / 3) * 400,
@@ -49,12 +51,14 @@ function CanvasComponent() {
     }));
 
     setNodes(newNodes);
-  }, [data?.nodes, setNodes, selectedNode?.id]);
+  }, [data?.nodes, setNodes, selectedNodeId]);
+
+  const selectedNode: CanvasNode | null =
+    data?.nodes?.find((item) => item.id === selectedNodeId) ?? null;
 
   const handleNodeClick = useCallback(
     (_: React.MouseEvent, node: Node) => {
-      const nodeData = node.data as CanvasNode;
-      setSelectedNode(nodeData);
+      setSelectedNodeId(node.id);
       setNodes((nds) =>
         nds.map((n) => {
           const currentData = n.data as CanvasNode;
@@ -65,7 +69,7 @@ function CanvasComponent() {
         })
       );
     },
-    [setNodes]
+    [setNodes, setSelectedNodeId]
   );
 
   const handleUpdateNode = useCallback(
@@ -135,4 +139,3 @@ function CanvasComponent() {
 }
 
 export const Canvas = memo(CanvasComponent);
-

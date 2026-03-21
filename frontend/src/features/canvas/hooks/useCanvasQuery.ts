@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
-import { fetchCanvasData } from '@/services/canvasService';
+import { fetchCanvasData } from '@/features/canvas/api/fetchCanvasData';
+import { canvasKeys } from '@/features/canvas/api/queryKeys';
 import type { CanvasData } from '@/types/canvas';
 
 interface UseCanvasQueryResult {
@@ -10,11 +11,8 @@ interface UseCanvasQueryResult {
 
 export function useCanvasQuery(): UseCanvasQueryResult {
   const { data, isPending, error } = useQuery({
-    queryKey: ['canvas'],
+    queryKey: canvasKeys.all,
     queryFn: fetchCanvasData,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    gcTime: 10 * 60 * 1000, // 10 minutes (formerly cacheTime)
-    retry: 1,
     refetchOnWindowFocus: true,
   });
 
@@ -24,3 +22,4 @@ export function useCanvasQuery(): UseCanvasQueryResult {
     error: error as Error | null,
   };
 }
+

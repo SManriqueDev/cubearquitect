@@ -1,4 +1,4 @@
-import type { CanvasData, CanvasNode, CanvasEdge } from '@/types/canvas';
+import type { CanvasData, CanvasEdge, CanvasNode } from '@/types/canvas';
 
 interface FloatingIP {
   address: string;
@@ -55,23 +55,20 @@ export async function fetchCanvasData(): Promise<CanvasData> {
     }
 
     const projects: ProjectResponse[] = await response.json();
-
-    // Normalize API response to canvas data
     const nodes: CanvasNode[] = [];
     const edges: CanvasEdge[] = [];
 
     projects.forEach((project) => {
       const projectId = project.project.id;
 
-      // Create nodes from VPS items
       project.vps.forEach((vps, index) => {
         const nodeId = `vps-${projectId}-${vps.id}`;
-        
-        // Extract primary IPv4 or first available IP
-        const primaryIP = vps.floating_ips?.list
-          .find(ip => ip.is_primary && ip.type === 'IPv4')
-          ?.address || vps.floating_ips?.list[0]?.address || '';
-        
+        const primaryIP =
+          vps.floating_ips?.list.find((ip) => ip.is_primary && ip.type === 'IPv4')
+            ?.address ||
+          vps.floating_ips?.list[0]?.address ||
+          '';
+
         nodes.push({
           id: nodeId,
           type: 'app',
@@ -83,7 +80,6 @@ export async function fetchCanvasData(): Promise<CanvasData> {
           projectId,
         });
 
-        // Create edges between sequential VPS items (execution order)
         if (index > 0) {
           const prevNodeId = `vps-${projectId}-${project.vps[index - 1].id}`;
           edges.push({
@@ -114,3 +110,4 @@ function mapVPSStatus(status: string): 'active' | 'inactive' | 'error' {
   }
   return 'inactive';
 }
+
