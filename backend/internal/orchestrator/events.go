@@ -88,7 +88,7 @@ func EventFromNodeStatus(deploymentID string, nodeID string, status *NodeStatus)
 		NodeID:       nodeID,
 		Status:       status.Status,
 		Message:      status.Error,
-		Timestamp:    status.Timestamp,
+		Timestamp:    time.Now().UnixMilli(),
 	}
 }
 
