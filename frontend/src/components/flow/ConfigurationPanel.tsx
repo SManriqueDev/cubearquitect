@@ -89,6 +89,7 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
             size="sm"
             onClick={() => onDeleteNode?.(selectedNode.id)}
             className="text-red-500 hover:text-red-600 hover:bg-red-50"
+            aria-label={`Delete node ${selectedNode.label}`}
           >
             <Trash2 className="w-4 h-4" />
           </Button>
