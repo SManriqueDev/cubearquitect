@@ -21,7 +21,6 @@ import '@xyflow/react/dist/style.css';
 import { useProjects } from '@/hooks/useProjects';
 import { useFlowStore } from '@/stores/flowStore';
 import { usePricingStore } from '@/stores/pricingStore';
-import { useNodeCount, useEdgeCount } from '@/hooks/useFlowStore';
 import AppNode from '@/components/nodes/AppNode';
 import DatabaseNode from '@/components/nodes/DatabaseNode';
 import { FlowToolbar } from './FlowToolbar';
@@ -56,8 +55,6 @@ function FlowCanvasComponent() {
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
-  const nodeCount = useNodeCount();
-  const edgeCount = useEdgeCount();
 
   const selectedNode: FlowNode | null =
     storeNodes.find((n) => n.id === selectedNodeId) ?? null;
@@ -247,7 +244,7 @@ function FlowCanvasComponent() {
         <MiniMap nodeStrokeWidth={3} zoomable pannable />
       </ReactFlow>
 
-      <FlowToolbar onAddNode={handleAddNode} nodeCount={nodeCount} edgeCount={edgeCount} />
+      <FlowToolbar onAddNode={handleAddNode} />
 
       <ConfigurationPanel
         selectedNode={selectedNode}
