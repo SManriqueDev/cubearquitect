@@ -2,8 +2,6 @@ package app
 
 import (
 	"github.com/SManriqueDev/cubearchitect/internal/handler"
-	"github.com/SManriqueDev/cubearchitect/internal/orchestrator"
-	"github.com/SManriqueDev/cubearchitect/internal/service"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 )
@@ -15,10 +13,6 @@ type HandlerSet struct {
 	VPS      *handler.VPSHandler
 	Pricing  *handler.PricingHandler
 	Deploy   *handler.DeployHandler
-	
-	// Dependencies for WS
-	OrchestratorSvc *service.OrchestratorService
-	EventHub        *orchestrator.EventHub
 }
 
 // RegisterRoutes wires handlers to routes.
