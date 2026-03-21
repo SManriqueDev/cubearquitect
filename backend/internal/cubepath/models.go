@@ -4,7 +4,7 @@ type ProjectResponse []ProjectItem
 
 type ProjectItem struct {
 	Project    ProjectInfo   `json:"project"`
-	Networks   []interface{} `json:"networks"` // Cambia interface{} cuando tengas el spec de networks
+	Networks   []interface{} `json:"networks"`
 	Baremetals []interface{} `json:"baremetals"`
 	VPS        []interface{} `json:"vps"`
 }
@@ -36,12 +36,6 @@ type VPS struct {
 	Status   string `json:"status"`
 	Username string `json:"username"`
 	Label    string `json:"label"`
-	// SSHKeys     []SSHKeyInfo    `json:"ssh_keys"`
-	// FloatingIPs FloatingIPList  `json:"floating_ips"`
-	// Plan        VPSPlanInfo     `json:"plan"`
-	// Template    VPSTemplateInfo `json:"template"`
-	// Location    VPSLocationInfo `json:"location"`
-	IPv4 string `json:"ipv4"`
-	IPv6 string `json:"ipv6"`
-	// Network     VPSNetworkInfo  `json:"network"`
+	IPv4     string `json:"ipv4"`
+	IPv6     string `json:"ipv6"`
 }

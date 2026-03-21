@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"log"
 	"net/http"
 	"time"
 )
@@ -76,36 +75,4 @@ func (c *Client) Patch(path string, body interface{}) (json.RawMessage, error) {
 
 func (c *Client) Delete(path string) (json.RawMessage, error) {
 	return c.request(http.MethodDelete, path, nil)
-}
-
-func (c *Client) GetProjects() (ProjectResponse, error) {
-	res, err := c.Get("/projects/")
-	if err != nil {
-		log.Printf("Error fetching projects: %v", err)
-		return nil, err
-	}
-	var projects ProjectResponse
-	err = json.Unmarshal(res, &projects)
-	return projects, err
-}
-
-func (c *Client) CreateVPS(projectID int, req VPSCreateRequest) (*VPS, error) {
-	res, err := c.Post(fmt.Sprintf("/vps/create/%d", projectID), req)
-	if err != nil {
-		log.Printf("Error creating VPS: %v", err)
-		return nil, err
-	}
-	var vps VPS
-	err = json.Unmarshal(res, &vps)
-	log.Printf("VPS created: %+v", vps)
-	return &vps, err
-}
-
-func (c *Client) GetPricing() (json.RawMessage, error) {
-	res, err := c.Get("/pricing/")
-	if err != nil {
-		log.Printf("Error fetching pricing: %v", err)
-		return nil, err
-	}
-	return res, err
 }
