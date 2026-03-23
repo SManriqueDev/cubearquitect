@@ -35,7 +35,7 @@ func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[stri
 
 	truncatedID := nodeID
 	if len(nodeID) > 8 {
-		truncatedID = nodeID[:8]
+		truncatedID = nodeID[:8] // This is to ensure the VPS name doesn't exceed provider limits and remains identifiable
 	}
 
 	req := cubepath.VPSCreateRequest{

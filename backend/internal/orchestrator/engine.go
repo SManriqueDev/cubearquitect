@@ -65,7 +65,7 @@ func (e *DeploymentEngine) executeLevel(ctx context.Context, deployCtx *Deployme
 	errChan := make(chan error, len(level))
 
 	for _, nodeID := range level {
-		wg.Add(1)
+		wg.Add(1) // Increment WaitGroup counter for each node in the level
 		go func(nID string) {
 			defer wg.Done()
 
@@ -190,7 +190,6 @@ func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, req cubepath.VP
 
 	createResp := &cubepath.VPSCreateResponse{}
 	var vps *cubepath.VPS
-
 	if err := json.Unmarshal(respBytes, createResp); err == nil && createResp.VPSID != 0 {
 		log.Printf("[createAndWaitVPS] Parsed CubePath format: VPS ID=%d, Status=%s, IPv4=%s",
 			createResp.VPSID, createResp.Status, createResp.IPv4Address)
