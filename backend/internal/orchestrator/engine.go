@@ -345,12 +345,23 @@ func (e *DeploymentEngine) isVPSReady(vps *cubepath.VPS, requireIPv4 bool) bool 
 }
 
 func (e *DeploymentEngine) getIP(vps *cubepath.VPS, requireIPv4 bool) string {
+	// If IPv4 is explicitly required, never fall back to IPv6.
+	if requireIPv4 {
+		return vps.IPv4
+	}
+
+	// When IPv4 is not required, prefer IPv4 if available.
 	if vps.IPv4 != "" {
 		return vps.IPv4
 	}
+
+	// For IPv6, wrap the literal in brackets so it can be safely interpolated
+	// into URLs/DSNs like "http://%s:%d" or "postgresql://...@%s:...".
 	if vps.IPv6 != "" {
-		return vps.IPv6
+		return "[" + vps.IPv6 + "]"
 	}
+
+	// No IP is available.
 	return ""
 }
 
