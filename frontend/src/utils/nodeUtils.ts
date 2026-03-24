@@ -3,6 +3,7 @@ import type { FlowNode, DeployPayload, DeployNode } from '@/types/flow';
 export function toDeployNode(node: FlowNode): DeployNode {
   if (node.type === 'app') {
     return {
+      id: node.id,
       type: 'app',
       name: node.name,
       plan_name: node.planName,
@@ -16,12 +17,14 @@ export function toDeployNode(node: FlowNode): DeployNode {
   }
 
   return {
+    id: node.id,
     type: 'database',
     name: node.name,
     plan_name: node.planName,
     location_name: node.locationName,
     label: node.label,
-    custom_cloudinit: node.cloudInitConfig,
+    ipv4: node.ipv4,
+    enable_backups: node.enableBackups,
   };
 }
 

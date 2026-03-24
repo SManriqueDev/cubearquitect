@@ -2,6 +2,7 @@ package orchestrator
 
 import (
 	"fmt"
+	"log"
 	"strings"
 
 	"github.com/SManriqueDev/cubearchitect/internal/config"
@@ -21,7 +22,7 @@ func NewNodeBasicBlueprint(cfg *config.Config) *NodeBasicBlueprint {
 	return &NodeBasicBlueprint{config: cfg}
 }
 
-func (bp *NodeBasicBlueprint) Kind() NodeKind     { return NodeKindApp }
+func (bp *NodeBasicBlueprint) Type() NodeType     { return NodeTypeApp }
 func (bp *NodeBasicBlueprint) Name() string       { return nodeBasicName }
 func (bp *NodeBasicBlueprint) EnvVarName() string { return "APP_URL" }
 
@@ -29,18 +30,24 @@ func (bp *NodeBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]s
 	cloudInit := bp.generateCloudInit(params)
 
 	truncatedID := nodeID
-	if len(nodeID) > 8 {
-		truncatedID = nodeID[:8]
+	if idx := strings.LastIndex(nodeID, "-"); idx > 0 {
+		truncatedID = nodeID[:idx]
 	}
+	if len(truncatedID) > 50 {
+		truncatedID = truncatedID[:50]
+	}
+
+	planName := getStringParam(params, "plan_name", "gp.nano")
+	locationName := getStringParam(params, "location_name", "us-mia-1")
 
 	req := cubepath.VPSCreateRequest{
 		Name:            fmt.Sprintf("node-app-%s", truncatedID),
-		PlanName:        "gp.nano",
+		PlanName:        planName,
 		TemplateName:    "ubuntu-24",
-		LocationName:    "us-mia-1",
+		LocationName:    locationName,
 		Label:           fmt.Sprintf("Node.js App (%s)", nodeID),
-		IPv4:            true,
-		EnableBackups:   false,
+		IPv4:            getBoolParam(params, "ipv4", false),
+		EnableBackups:   getBoolParam(params, "enable_backups", false),
 		CustomCloudinit: cloudInit,
 	}
 
@@ -63,19 +70,37 @@ func (bp *NodeBasicBlueprint) ExtractConnectionString(vpsIP string, _ map[string
 }
 
 func (bp *NodeBasicBlueprint) generateCloudInit(envVars map[string]string) string {
-	var envSection string
-	if len(envVars) > 0 {
-		envSection = "\nruncmd:\n"
-		envSection += "  - echo 'export NODE_ENV=production' >> /root/.bashrc\n"
-		for k, v := range envVars {
-			escapedVal := strings.ReplaceAll(v, "'", "'\\''")
-			envSection += fmt.Sprintf("  - echo 'export %s=%q' >> /root/.bashrc\n", k, escapedVal)
-		}
-		envSection += "  - echo 'Starting Node.js application...' >> /var/log/app-init.log\n"
-		envSection += "  - echo 'Run: npm install && npm start' >> /var/log/app-init.log\n"
+	log.Printf("Generating cloud-init with env vars: %+v", envVars)
+
+	var systemParams = map[string]bool{
+		"plan_name":      true,
+		"location_name":  true,
+		"template_name":  true,
+		"ipv4":           true,
+		"enable_backups": true,
 	}
 
-	return `#cloud-config
+	var appConfigContent string
+	var etcEnvContent string
+
+	for k, v := range envVars {
+		if systemParams[k] {
+			continue
+		}
+		escapedVal := strings.ReplaceAll(v, `"`, `\"`)
+		appConfigContent += fmt.Sprintf("export %s=\"%s\"\n", k, escapedVal)
+		etcEnvContent += fmt.Sprintf("%s=\"%s\"\n", k, escapedVal)
+	}
+
+	appConfigContent = strings.TrimRight(appConfigContent, "\n")
+	etcEnvContent = strings.TrimRight(etcEnvContent, "\n")
+
+	if appConfigContent == "" {
+		appConfigContent = "# No environment variables configured"
+		etcEnvContent = ""
+	}
+
+	return fmt.Sprintf(`#cloud-config
 package_update: true
 packages:
   - curl
@@ -90,5 +115,10 @@ write_files:
     permissions: '0644'
     content: |
       # Application configuration
-` + envSection
+      %s
+  - path: /etc/environment
+    permissions: '0644'
+    content: |
+      %s
+`, appConfigContent, etcEnvContent)
 }

@@ -115,6 +115,32 @@ func (e *DeploymentEngine) executeLevel(ctx context.Context, deployCtx *Deployme
 	return nil
 }
 
+func (e *DeploymentEngine) buildMergedParams(node *DeployNode) map[string]string {
+	mergedParams := make(map[string]string)
+
+	for k, v := range node.Params {
+		mergedParams[k] = v
+	}
+
+	if node.PlanName != "" {
+		mergedParams["plan_name"] = node.PlanName
+	}
+	if node.LocationName != "" {
+		mergedParams["location_name"] = node.LocationName
+	}
+	if node.TemplateName != "" {
+		mergedParams["template_name"] = node.TemplateName
+	}
+	if node.IPv4 {
+		mergedParams["ipv4"] = "true"
+	}
+	if node.EnableBackups {
+		mergedParams["enable_backups"] = "true"
+	}
+
+	return mergedParams
+}
+
 func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *DeploymentContext, nodeID string) error {
 	node := deployCtx.Nodes[nodeID]
 	if node == nil {
@@ -125,19 +151,21 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 
 	blueprintName := node.Blueprint
 	if blueprintName == "" {
-		bp, err := e.registry.GetDefault(node.Kind)
+		bp, err := e.registry.GetDefault(node.Type)
 		if err != nil {
-			return fmt.Errorf("no default blueprint for kind %s: %w", node.Kind, err)
+			return fmt.Errorf("no default blueprint for type %s: %w", node.Type, err)
 		}
 		blueprintName = bp.Name()
 	}
 
-	blueprint, err := e.registry.Get(node.Kind, blueprintName)
+	blueprint, err := e.registry.Get(node.Type, blueprintName)
 	if err != nil {
-		return fmt.Errorf("blueprint not found: %s:%s: %w", node.Kind, blueprintName, err)
+		return fmt.Errorf("blueprint not found: %s:%s: %w", node.Type, blueprintName, err)
 	}
 
-	vpsReqInterface, err := blueprint.BuildVPSRequest(nodeID, node.Params)
+	mergedParams := e.buildMergedParams(node)
+
+	vpsReqInterface, err := blueprint.BuildVPSRequest(nodeID, mergedParams)
 	if err != nil {
 		return fmt.Errorf("failed to build VPS request: %w", err)
 	}
@@ -159,7 +187,7 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 		IPAddress: vpsIP,
 	}
 
-	if node.Kind == NodeKindDatabase || node.Kind == NodeKindCache {
+	if node.Type == NodeTypeDatabase || node.Type == NodeTypeCache {
 		connStr, err := blueprint.ExtractConnectionString(vpsIP, nil)
 		if err != nil {
 			return fmt.Errorf("failed to extract connection string: %w", err)
@@ -232,9 +260,12 @@ func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, req cubepath.VP
 		return 0, "", fmt.Errorf("received invalid VPS ID (0) from API response")
 	}
 
-	if (vps.Status == "running" || vps.Status == "active") && vps.IPv4 != "" {
-		log.Printf("[VPS %d] Running/Active immediately with IP %s", vps.ID, vps.IPv4)
-		return vps.ID, vps.IPv4, nil
+	requireIPv4 := req.IPv4
+
+	if e.isVPSReady(vps, requireIPv4) {
+		ip := e.getIP(vps, requireIPv4)
+		log.Printf("[VPS %d] Running/Active immediately with IP %s", vps.ID, ip)
+		return vps.ID, ip, nil
 	}
 
 	maxRetries := 120
@@ -286,15 +317,41 @@ func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, req cubepath.VP
 			log.Printf("[VPS %d] Current status: %s (attempt %d/%d)", vps.ID, vps.Status, i+1, maxRetries)
 		}
 
-		if (vps.Status == "running" || vps.Status == "active") && vps.IPv4 != "" {
-			log.Printf("[VPS %d] Ready! IP: %s", vps.ID, vps.IPv4)
-			return vps.ID, vps.IPv4, nil
+		if e.isVPSReady(vps, requireIPv4) {
+			ip := e.getIP(vps, requireIPv4)
+			log.Printf("[VPS %d] Ready! IP: %s", vps.ID, ip)
+			return vps.ID, ip, nil
 		}
 
 		time.Sleep(retryInterval)
 	}
 
+	if requireIPv4 {
+		return 0, "", fmt.Errorf("VPS %d did not get IPv4 address in time (waited %v)", vps.ID, maxRetries*2)
+	}
 	return 0, "", fmt.Errorf("VPS %d did not reach running state in time (waited %v)", vps.ID, maxRetries*2)
+}
+
+func (e *DeploymentEngine) isVPSReady(vps *cubepath.VPS, requireIPv4 bool) bool {
+	if vps.Status != "running" && vps.Status != "active" {
+		return false
+	}
+
+	if requireIPv4 {
+		return vps.IPv4 != ""
+	}
+
+	return vps.IPv4 != "" || vps.IPv6 != ""
+}
+
+func (e *DeploymentEngine) getIP(vps *cubepath.VPS, requireIPv4 bool) string {
+	if vps.IPv4 != "" {
+		return vps.IPv4
+	}
+	if vps.IPv6 != "" {
+		return vps.IPv6
+	}
+	return ""
 }
 
 func (e *DeploymentEngine) injectConnectionStringToDependents(deployCtx *DeploymentContext, sourceNodeID string, envVarName, connStr string) error {
@@ -303,7 +360,7 @@ func (e *DeploymentEngine) injectConnectionStringToDependents(deployCtx *Deploym
 			targetNodeID := edge.Target
 			targetNode := deployCtx.Nodes[targetNodeID]
 
-			if targetNode.Kind != NodeKindApp {
+			if targetNode.Type != NodeTypeApp {
 				continue
 			}
 

@@ -23,7 +23,7 @@ func NewPostgresBasicBlueprint(cfg *config.Config) *PostgresBasicBlueprint {
 	return &PostgresBasicBlueprint{config: cfg}
 }
 
-func (bp *PostgresBasicBlueprint) Kind() NodeKind     { return NodeKindDatabase }
+func (bp *PostgresBasicBlueprint) Type() NodeType     { return NodeTypeDatabase }
 func (bp *PostgresBasicBlueprint) Name() string       { return postgresBasicName }
 func (bp *PostgresBasicBlueprint) EnvVarName() string { return "DATABASE_URL" }
 
@@ -34,18 +34,24 @@ func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[stri
 	}
 
 	truncatedID := nodeID
-	if len(nodeID) > 8 {
-		truncatedID = nodeID[:8] // This is to ensure the VPS name doesn't exceed provider limits and remains identifiable
+	if idx := strings.LastIndex(nodeID, "-"); idx > 0 {
+		truncatedID = nodeID[:idx]
 	}
+	if len(truncatedID) > 50 {
+		truncatedID = truncatedID[:50]
+	}
+
+	planName := getStringParam(params, "plan_name", "gp.nano")
+	locationName := getStringParam(params, "location_name", "us-mia-1")
 
 	req := cubepath.VPSCreateRequest{
 		Name:            fmt.Sprintf("postgres-%s", truncatedID),
-		PlanName:        "gp.nano",
+		PlanName:        planName,
 		TemplateName:    "ubuntu-24",
-		LocationName:    "us-mia-1",
+		LocationName:    locationName,
 		Label:           fmt.Sprintf("PostgreSQL (%s)", nodeID),
-		IPv4:            true,
-		EnableBackups:   true,
+		IPv4:            getBoolParam(params, "ipv4", false),
+		EnableBackups:   getBoolParam(params, "enable_backups", false),
 		CustomCloudinit: bp.generateCloudInit(dbName),
 	}
 
@@ -69,7 +75,7 @@ func (bp *PostgresBasicBlueprint) ExtractConnectionString(vpsIP string, _ map[st
 }
 
 func (bp *PostgresBasicBlueprint) generateCloudInit(dbName string) string {
-	return fmt.Sprintf(`#cloud-config
+	cloudInit := fmt.Sprintf(`#cloud-config
 package_update: true
 packages:
   - postgresql
@@ -77,20 +83,22 @@ packages:
 
 runcmd:
   - systemctl start postgresql
+  - echo "[1/7] PostgreSQL started"
   - systemctl enable postgresql
-  - |
-    sudo -u postgres psql << 'EOFPSQL'
-    CREATE DATABASE %s;
-    CREATE USER %s WITH PASSWORD '%s';
-    ALTER ROLE %s SET client_encoding TO 'utf8';
-    ALTER ROLE %s SET default_transaction_isolation TO 'read committed';
-    ALTER ROLE %s SET default_transaction_deferrable TO on;
-    GRANT ALL PRIVILEGES ON DATABASE %s TO %s;
-    ALTER USER %s CREATEDB;
-    EOFPSQL
-  - echo "host    all             all             0.0.0.0/0               md5" >> /etc/postgresql/*/main/pg_hba.conf
-  - sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf
+  - echo "[2/7] PostgreSQL enabled"
+  - sleep 3
+  - echo "[3/7] Creating database %s..."
+  - sudo -u postgres psql -c "CREATE DATABASE %s;" || echo "Database may already exist"
+  - echo "[4/7] Creating user %s..."
+  - sudo -u postgres psql -c "CREATE USER %s WITH PASSWORD '%s';" || echo "User may already exist"
+  - echo "[5/7] Granting privileges..."
+  - sudo -u postgres psql -c "GRANT ALL PRIVILEGES ON DATABASE %s TO %s;" || echo "Privileges may already granted"
+  - echo "[6/7] Configuring remote access..."
+  - echo "host all all 0.0.0.0/0 md5" >> /etc/postgresql/*/main/pg_hba.conf
+  - sed -i "s/#listen_addresses = 'localhost'/listen_addresses = '*'/" /etc/postgresql/*/main/postgresql.conf || true
+  - echo "[7/7] Restarting PostgreSQL..."
   - systemctl restart postgresql
   - echo "PostgreSQL setup complete"
-`, dbName, postgresUsername, postgresPassword, postgresUsername, postgresUsername, postgresUsername, dbName, postgresUsername, postgresUsername)
+`, dbName, dbName, postgresUsername, postgresPassword, dbName, postgresUsername)
+	return cloudInit
 }

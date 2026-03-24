@@ -31,7 +31,8 @@ export type AppNodeData = BaseNodeData & {
 export type DatabaseNodeData = BaseNodeData & {
   type: 'database';
   name: string;
-  cloudInitConfig?: string;
+  ipv4: boolean;
+  enableBackups: boolean;
 };
 
 // Union type for all node types
@@ -54,6 +55,7 @@ export interface CanvasData {
 
 // Deploy payload
 export interface DeployNode {
+  id: string;
   type: 'app' | 'database';
   name: string;
   plan_name: string;
