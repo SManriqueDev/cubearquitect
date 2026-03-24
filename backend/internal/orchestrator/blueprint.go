@@ -2,16 +2,16 @@ package orchestrator
 
 import "fmt"
 
-type NodeKind string
+type NodeType string
 
 const (
-	NodeKindApp      NodeKind = "app"
-	NodeKindDatabase NodeKind = "database"
-	NodeKindCache    NodeKind = "cache"
+	NodeTypeApp      NodeType = "app"
+	NodeTypeDatabase NodeType = "database"
+	NodeTypeCache    NodeType = "cache"
 )
 
 type Blueprint interface {
-	Kind() NodeKind
+	Type() NodeType
 	Name() string
 	BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error)
 	ExtractConnectionString(vpsIP string, metadata map[string]interface{}) (string, error)
@@ -27,7 +27,7 @@ func NewBlueprintRegistry() *BlueprintRegistry {
 }
 
 func (r *BlueprintRegistry) Register(bp Blueprint) error {
-	key := fmt.Sprintf("%s:%s", bp.Kind(), bp.Name())
+	key := fmt.Sprintf("%s:%s", bp.Type(), bp.Name())
 	if _, exists := r.blueprints[key]; exists {
 		return fmt.Errorf("blueprint already registered: %s", key)
 	}
@@ -35,8 +35,8 @@ func (r *BlueprintRegistry) Register(bp Blueprint) error {
 	return nil
 }
 
-func (r *BlueprintRegistry) Get(kind NodeKind, name string) (Blueprint, error) {
-	key := fmt.Sprintf("%s:%s", kind, name)
+func (r *BlueprintRegistry) Get(nodeType NodeType, name string) (Blueprint, error) {
+	key := fmt.Sprintf("%s:%s", nodeType, name)
 	bp, exists := r.blueprints[key]
 	if !exists {
 		return nil, fmt.Errorf("blueprint not found: %s", key)
@@ -44,19 +44,19 @@ func (r *BlueprintRegistry) Get(kind NodeKind, name string) (Blueprint, error) {
 	return bp, nil
 }
 
-func (r *BlueprintRegistry) GetDefault(kind NodeKind) (Blueprint, error) {
+func (r *BlueprintRegistry) GetDefault(nodeType NodeType) (Blueprint, error) {
 	for _, bp := range r.blueprints {
-		if bp.Kind() == kind {
+		if bp.Type() == nodeType {
 			return bp, nil
 		}
 	}
-	return nil, fmt.Errorf("no blueprint found for kind: %s", kind)
+	return nil, fmt.Errorf("no blueprint found for type: %s", nodeType)
 }
 
-func (r *BlueprintRegistry) ListByKind(kind NodeKind) []Blueprint {
+func (r *BlueprintRegistry) ListByType(nodeType NodeType) []Blueprint {
 	var result []Blueprint
 	for _, bp := range r.blueprints {
-		if bp.Kind() == kind {
+		if bp.Type() == nodeType {
 			result = append(result, bp)
 		}
 	}

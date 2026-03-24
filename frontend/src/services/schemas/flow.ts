@@ -46,7 +46,8 @@ export const canvasDataSchema = z.object({
 });
 
 export const deployNodeSchema = z.object({
-  type: nodeTypeSchema,
+  id: z.string().min(1),
+  type: z.enum(['app', 'database']),
   name: z.string().min(1).max(63),
   plan_name: z.string().min(1),
   template_name: z.string().optional(),
@@ -55,7 +56,6 @@ export const deployNodeSchema = z.object({
   ssh_key_names: z.array(z.string()).optional(),
   ipv4: z.boolean().optional(),
   enable_backups: z.boolean().optional(),
-  custom_cloudinit: z.string().optional(),
 });
 
 export const deployPayloadSchema = z.object({

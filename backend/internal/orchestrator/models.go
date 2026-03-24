@@ -1,13 +1,18 @@
 package orchestrator
 
 type DeployNode struct {
-	ID        string            `json:"id"`
-	Kind      NodeKind          `json:"kind"`
-	Name      string            `json:"name"`
-	Label     string            `json:"label,omitempty"`
-	Blueprint string            `json:"blueprint,omitempty"`
-	Params    map[string]string `json:"params,omitempty"`
-	Status    string            `json:"status,omitempty"`
+	ID            string            `json:"id"`
+	Type          NodeType          `json:"type"`
+	Name          string            `json:"name"`
+	Label         string            `json:"label,omitempty"`
+	Blueprint     string            `json:"blueprint,omitempty"`
+	PlanName      string            `json:"plan_name,omitempty"`
+	TemplateName  string            `json:"template_name,omitempty"`
+	LocationName  string            `json:"location_name,omitempty"`
+	IPv4          bool              `json:"ipv4,omitempty"`
+	EnableBackups bool              `json:"enable_backups,omitempty"`
+	Params        map[string]string `json:"params,omitempty"`
+	Status        string            `json:"status,omitempty"`
 }
 
 type DeployEdge struct {

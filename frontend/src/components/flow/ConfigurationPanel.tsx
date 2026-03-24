@@ -57,7 +57,7 @@ function ConfigurationPanelComponent({
 
 interface NodeFormProps {
   selectedNode: FlowNode;
-  pricing: { plans: Array<{ plan_name: string; cpu: number; ram: number }>; locations: Array<{ location_name: string; description: string }>; templates: Array<{ template_name: string; os_name: string; version: string }> } | undefined;
+  pricing: { plans: Array<{ plan_name: string; cpu: number; ram: number }>; locations: Array<{ location_name: string; description: string }>; templates: Array<{ template_name: string; os_name: string; version: string }> } | undefined | null;
   onUpdateNode?: (node: FlowNode) => void;
   onDeleteNode?: (id: string) => void;
 }
@@ -181,71 +181,56 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
         </div>
 
         {isApp && (
-          <>
-            <div className="space-y-2">
-              <Label htmlFor="template" className="text-xs font-semibold text-gray-700 uppercase">
-                OS / Template
-              </Label>
-              <select
-                id="template"
-                value={(formData as AppNodeData).templateName || ''}
-                onChange={(e) => handleChange('templateName', e.target.value)}
-                className="w-full h-10 px-3 text-sm border border-gray-200 rounded-md bg-white"
-              >
-                <option value="">Select template</option>
-                {(formData as AppNodeData).templateName && !pricing?.templates.some(t => t.template_name === (formData as AppNodeData).templateName) && (
-                  <option value={(formData as AppNodeData).templateName}>{(formData as AppNodeData).templateName} (current)</option>
-                )}
-                {pricing?.templates.map((tmpl) => (
-                  <option key={tmpl.template_name} value={tmpl.template_name}>
-                    {tmpl.os_name} {tmpl.version}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="ipv4"
-                checked={(formData as AppNodeData).ipv4 ?? true}
-                onChange={(e) => handleChange('ipv4', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              <Label htmlFor="ipv4" className="text-sm font-normal text-gray-700">
-                Enable IPv4
-              </Label>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="backups"
-                checked={(formData as AppNodeData).enableBackups ?? false}
-                onChange={(e) => handleChange('enableBackups', e.target.checked)}
-                className="w-4 h-4 rounded border-gray-300"
-              />
-              <Label htmlFor="backups" className="text-sm font-normal text-gray-700">
-                Enable Backups
-              </Label>
-            </div>
-          </>
-        )}
-
-        {selectedNode.type === 'database' && (
           <div className="space-y-2">
-            <Label htmlFor="cloudinit" className="text-xs font-semibold text-gray-700 uppercase">
-              Docker Image / Cloud-init
+            <Label htmlFor="template" className="text-xs font-semibold text-gray-700 uppercase">
+              OS / Template
             </Label>
-            <Input
-              id="cloudinit"
-              placeholder="e.g., postgres:16"
-              value={(formData as DatabaseNodeData).cloudInitConfig || ''}
-              onChange={(e) => handleChange('cloudInitConfig', e.target.value)}
-              className="text-sm font-mono"
-            />
+            <select
+              id="template"
+              value={(formData as AppNodeData).templateName || ''}
+              onChange={(e) => handleChange('templateName', e.target.value)}
+              className="w-full h-10 px-3 text-sm border border-gray-200 rounded-md bg-white"
+            >
+              <option value="">Select template</option>
+              {(formData as AppNodeData).templateName && !pricing?.templates.some(t => t.template_name === (formData as AppNodeData).templateName) && (
+                <option value={(formData as AppNodeData).templateName}>{(formData as AppNodeData).templateName} (current)</option>
+              )}
+              {pricing?.templates.map((tmpl) => (
+                <option key={tmpl.template_name} value={tmpl.template_name}>
+                  {tmpl.os_name} {tmpl.version}
+                </option>
+              ))}
+            </select>
           </div>
         )}
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="ipv4"
+            checked={(formData as AppNodeData).ipv4 ?? (formData as DatabaseNodeData).ipv4 ?? false}
+            onChange={(e) => handleChange('ipv4', e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300"
+          />
+          <Label htmlFor="ipv4" className="text-sm font-normal text-gray-700">
+            Enable IPv4
+          </Label>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="backups"
+            checked={(formData as AppNodeData).enableBackups ?? (formData as DatabaseNodeData).enableBackups ?? false}
+            onChange={(e) => handleChange('enableBackups', e.target.checked)}
+            className="w-4 h-4 rounded border-gray-300"
+          />
+          <Label htmlFor="backups" className="text-sm font-normal text-gray-700">
+            Enable Backups
+          </Label>
+        </div>
+
+
 
         <div className="space-y-2">
           <Label className="text-xs font-semibold text-gray-700 uppercase">

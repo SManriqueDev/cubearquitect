@@ -48,6 +48,8 @@ const defaultDatabaseNode = (projectId = 1): DatabaseNodeData => ({
   planName: 'gp.nano',
   locationName: 'us-mia-1',
   status: 'inactive',
+  ipv4: false,
+  enableBackups: false,
   projectId,
   isSelected: false,
 });
