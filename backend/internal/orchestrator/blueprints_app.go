@@ -70,7 +70,11 @@ func (bp *NodeBasicBlueprint) ExtractConnectionString(vpsIP string, _ map[string
 }
 
 func (bp *NodeBasicBlueprint) generateCloudInit(envVars map[string]string) string {
-	log.Printf("Generating cloud-init with env vars: %+v", envVars)
+	var keys []string
+	for k := range envVars {
+		keys = append(keys, k)
+	}
+	log.Printf("Generating cloud-init with %d env vars: %v", len(envVars), keys)
 
 	var systemParams = map[string]bool{
 		"plan_name":      true,
