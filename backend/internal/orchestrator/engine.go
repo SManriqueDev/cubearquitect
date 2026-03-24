@@ -327,9 +327,9 @@ func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, req cubepath.VP
 	}
 
 	if requireIPv4 {
-		return 0, "", fmt.Errorf("VPS %d did not get IPv4 address in time (waited %v)", vps.ID, maxRetries*2)
+		return 0, "", fmt.Errorf("VPS %d did not get IPv4 address in time (waited %v)", vps.ID, time.Duration(maxRetries)*retryInterval)
 	}
-	return 0, "", fmt.Errorf("VPS %d did not reach running state in time (waited %v)", vps.ID, maxRetries*2)
+	return 0, "", fmt.Errorf("VPS %d did not reach running state in time (waited %v)", vps.ID, time.Duration(maxRetries)*retryInterval)
 }
 
 func (e *DeploymentEngine) isVPSReady(vps *cubepath.VPS, requireIPv4 bool) bool {
