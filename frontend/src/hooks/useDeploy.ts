@@ -27,13 +27,15 @@ export function useDeploy(options: UseDeployOptions = {}) {
         body: JSON.stringify(validated),
       });
     },
-    onSuccess: (data) => {
+    onSuccess: (data, variables) => {
       toast.success('Deployment started!', {
         description: data.message,
       });
       
       if (data.deployment_id) {
-        options.onDeployStarted?.(data.deployment_id, []);
+        const parsed = deployPayloadSchema.safeParse(variables);
+        const nodeIds = parsed.success ? parsed.data.nodes.map((n) => n.id) : [];
+        options.onDeployStarted?.(data.deployment_id, nodeIds);
       }
       
       queryClient.invalidateQueries({ queryKey: canvasKeys.all });

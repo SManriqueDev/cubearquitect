@@ -14,6 +14,7 @@ type Config struct {
 	Port         string
 	ProjectID    int
 	SSHKeyNames  string // Comma-separated SSH key names to use for VPS provisioning
+	DataDir      string // Directory for persistent data (e.g. node type store)
 }
 
 func Load() *Config {
@@ -24,6 +25,7 @@ func Load() *Config {
 		BaseURL:     os.Getenv("CUBE_API_URL"),
 		Port:        os.Getenv("PORT"),
 		SSHKeyNames: os.Getenv("CUBE_SSH_KEY_NAMES"),
+		DataDir:     os.Getenv("CUBE_DATA_DIR"),
 	}
 
 	if cfg.Token == "" {
@@ -50,6 +52,10 @@ func Load() *Config {
 
 	if cfg.SSHKeyNames == "" {
 		log.Println("⚠️  CUBE_SSH_KEY_NAMES not set; VPS will require password authentication")
+	}
+
+	if cfg.DataDir == "" {
+		cfg.DataDir = "/tmp/cubearchitect"
 	}
 
 	return cfg

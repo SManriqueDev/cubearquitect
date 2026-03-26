@@ -30,7 +30,7 @@ func New(cfg *config.Config) *App {
 	fiberApp.Use(cors.New())
 
 	// Initialize node type store for persisting node types
-	nodeTypeStore, err := orchestrator.NewNodeTypeStore("/tmp/cubearchitect")
+	nodeTypeStore, err := orchestrator.NewNodeTypeStore(cfg.DataDir)
 	if err != nil {
 		log.Printf("Warning: Failed to initialize node type store: %v", err)
 	}
