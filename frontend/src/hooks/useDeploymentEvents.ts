@@ -258,6 +258,8 @@ export function useDeploymentEvents({
       if (retryTimeoutRef.current) {
         clearTimeout(retryTimeoutRef.current);
       }
+      // Prevent reconnection logic in onclose from running after unmount/intentional close
+      isCompletedRef.current = true;
       if (wsRef.current) {
         wsRef.current.close();
       }
