@@ -12,10 +12,11 @@ import (
 )
 
 type DeploymentEngine struct {
-	client    *cubepath.Client
-	registry  *BlueprintRegistry
-	projectID int
-	eventHub  *EventHub
+	client        *cubepath.Client
+	registry      *BlueprintRegistry
+	projectID     int
+	eventHub      *EventHub
+	nodeTypeStore *NodeTypeStore
 }
 
 func NewDeploymentEngine(client *cubepath.Client, projectID int, registry *BlueprintRegistry) *DeploymentEngine {
@@ -30,6 +31,10 @@ func (e *DeploymentEngine) SetEventHub(hub *EventHub) {
 	e.eventHub = hub
 }
 
+func (e *DeploymentEngine) SetNodeTypeStore(store *NodeTypeStore) {
+	e.nodeTypeStore = store
+}
+
 func (e *DeploymentEngine) ExecuteDeployment(ctx context.Context, deployCtx *DeploymentContext) error {
 	if deployCtx.Plan == nil || len(deployCtx.Plan) == 0 {
 		return fmt.Errorf("execution plan is empty")
@@ -39,7 +44,7 @@ func (e *DeploymentEngine) ExecuteDeployment(ctx context.Context, deployCtx *Dep
 		log.Printf("[Deployment %s] Starting level %d with %d nodes: %v", deployCtx.DeploymentID, levelIdx, len(level), level)
 
 		if e.eventHub != nil {
-			e.eventHub.Publish(EventLevelStart(deployCtx.DeploymentID, levelIdx))
+			e.eventHub.Publish(EventLevelStart(deployCtx.DeploymentID, levelIdx, level))
 		}
 
 		if err := e.executeLevel(ctx, deployCtx, level, levelIdx); err != nil {
@@ -149,6 +154,10 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 
 	deployCtx.NodeStatuses[nodeID].Status = "deploying"
 
+	if e.eventHub != nil {
+		e.eventHub.Publish(EventFromNodeStatus(deployCtx.DeploymentID, nodeID, deployCtx.NodeStatuses[nodeID]))
+	}
+
 	blueprintName := node.Blueprint
 	if blueprintName == "" {
 		bp, err := e.registry.GetDefault(node.Type)
@@ -165,7 +174,7 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 
 	mergedParams := e.buildMergedParams(node)
 
-	vpsReqInterface, err := blueprint.BuildVPSRequest(nodeID, mergedParams)
+	vpsReqInterface, err := blueprint.BuildVPSRequest(node, mergedParams)
 	if err != nil {
 		return fmt.Errorf("failed to build VPS request: %w", err)
 	}
@@ -182,9 +191,15 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 	}
 
 	deployCtx.NodeStatuses[nodeID].VPSInfo = &VPSDeploymentInfo{
-		VPSID:     vpsID,
-		Name:      vpsReq.Name,
-		IPAddress: vpsIP,
+		VPSID:          vpsID,
+		Name:           vpsReq.Name,
+		IPAddress:      vpsIP,
+		NodeType:       string(node.Type),
+		OriginalNodeID: nodeID,
+	}
+
+	if e.nodeTypeStore != nil {
+		e.nodeTypeStore.Set(vpsID, string(node.Type))
 	}
 
 	if node.Type == NodeTypeDatabase || node.Type == NodeTypeCache {

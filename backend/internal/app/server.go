@@ -1,6 +1,8 @@
 package app
 
 import (
+	"log"
+
 	"github.com/SManriqueDev/cubearchitect/internal/config"
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 	"github.com/SManriqueDev/cubearchitect/internal/handler"
@@ -11,26 +13,44 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
+// App holds all dependencies and cleanup functions
+type App struct {
+	*fiber.App
+	nodeTypeStore *orchestrator.NodeTypeStore
+}
+
 // New constructs a Fiber app wired with dependencies.
-func New(cfg *config.Config) *fiber.App {
+func New(cfg *config.Config) *App {
 	client := cubepath.NewClient(cfg.BaseURL, cfg.Token)
-	app := fiber.New(fiber.Config{
+	fiberApp := fiber.New(fiber.Config{
 		AppName: "CubeArchitect API v1",
 	})
 
-	app.Use(logger.New())
-	app.Use(cors.New())
+	fiberApp.Use(logger.New())
+	fiberApp.Use(cors.New())
+
+	// Initialize node type store for persisting node types
+	nodeTypeStore, err := orchestrator.NewNodeTypeStore("/tmp/cubearchitect")
+	if err != nil {
+		log.Printf("Warning: Failed to initialize node type store: %v", err)
+	}
 
 	projectsService := service.NewProjectsService(client)
 	vpsService := service.NewVPSService(client, cfg.ProjectID)
 	pricingService := service.NewPricingService(client)
-	
+
 	// Initialize orchestrator
 	orchestratorService := service.NewOrchestratorService(client, cfg.ProjectID, cfg)
 	eventHub := orchestrator.NewEventHub()
-	
+
 	// Set event hub on the engine for event publishing
 	orchestratorService.SetEventHub(eventHub)
+
+	// Set node type store for tracking node types
+	if nodeTypeStore != nil {
+		orchestratorService.SetNodeTypeStore(nodeTypeStore)
+		projectsService.SetNodeTypeStore(nodeTypeStore)
+	}
 
 	handlerSet := HandlerSet{
 		Health:   handler.NewHealthHandler(),
@@ -40,7 +60,18 @@ func New(cfg *config.Config) *fiber.App {
 		Deploy:   handler.NewDeployHandler(orchestratorService, eventHub),
 	}
 
-	RegisterRoutes(app, handlerSet)
+	RegisterRoutes(fiberApp, handlerSet)
 
-	return app
+	return &App{
+		App:           fiberApp,
+		nodeTypeStore: nodeTypeStore,
+	}
+}
+
+// Close cleans up resources
+func (a *App) Close() error {
+	if a.nodeTypeStore != nil {
+		return a.nodeTypeStore.Close()
+	}
+	return nil
 }

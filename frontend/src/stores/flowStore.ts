@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { FlowNode, FlowEdge, AppNodeData, DatabaseNodeData } from '@/types/flow';
+import type { FlowNode, FlowEdge, AppNodeData, DatabaseNodeData, NodeStatus } from '@/types/flow';
 
 interface FlowState {
   selectedNodeId: string | null;
@@ -21,6 +21,14 @@ interface FlowState {
   loadFromApi: (nodes: FlowNode[], edges: FlowEdge[]) => void;
   reset: () => void;
   getNode: (id: string) => FlowNode | undefined;
+
+  // Deployment context
+  deploymentId: string | null;
+  deployingNodeIds: string[];
+  isDeploying: boolean;
+  setDeploymentContext: (deploymentId: string, nodeIds: string[]) => void;
+  updateNodeStatus: (nodeId: string, status: NodeStatus, errorMessage?: string) => void;
+  clearDeployment: () => void;
 }
 
 const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
@@ -128,5 +136,42 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
   getNode: (id) => {
     return get().nodes.find((node) => node.id === id);
+  },
+
+  deploymentId: null,
+  deployingNodeIds: [],
+  isDeploying: false,
+
+  setDeploymentContext: (deploymentId, nodeIds) => {
+    set({
+      deploymentId,
+      deployingNodeIds: nodeIds,
+      isDeploying: true,
+    });
+    nodeIds.forEach((id) => {
+      set((state) => ({
+        nodes: state.nodes.map((node) =>
+          node.id === id ? { ...node, status: 'pending' as NodeStatus } : node
+        ),
+      }));
+    });
+  },
+
+  updateNodeStatus: (nodeId, status, errorMessage) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        node.id === nodeId
+          ? { ...node, status, errorMessage } as FlowNode
+          : node
+      ),
+    }));
+  },
+
+  clearDeployment: () => {
+    set({
+      deploymentId: null,
+      deployingNodeIds: [],
+      isDeploying: false,
+    });
   },
 }));

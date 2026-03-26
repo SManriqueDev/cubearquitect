@@ -240,27 +240,35 @@ function NodeForm({ selectedNode, pricing, onUpdateNode, onDeleteNode }: NodeFor
             "inline-flex items-center gap-2 px-3 py-2 rounded-md border",
             selectedNode.status === "active" && "bg-green-50 border-green-200",
             selectedNode.status === "inactive" && "bg-gray-50 border-gray-200",
-            selectedNode.status === "error" && "bg-red-50 border-red-200"
+            selectedNode.status === "error" && "bg-red-50 border-red-200",
+            selectedNode.status === "pending" && "bg-yellow-50 border-yellow-200",
+            selectedNode.status === "deploying" && "bg-blue-50 border-blue-200"
           )}>
             <span className="relative flex h-2 w-2">
               <span className={cn(
                 "absolute inline-flex h-full w-full rounded-full opacity-75 animate-pulse",
                 selectedNode.status === "active" && "bg-green-500",
                 selectedNode.status === "inactive" && "bg-gray-400",
-                selectedNode.status === "error" && "bg-red-500"
+                selectedNode.status === "error" && "bg-red-500",
+                selectedNode.status === "pending" && "bg-yellow-500",
+                selectedNode.status === "deploying" && "bg-blue-500"
               )} />
               <span className={cn(
                 "relative inline-flex rounded-full h-2 w-2",
                 selectedNode.status === "active" && "bg-green-500",
                 selectedNode.status === "inactive" && "bg-gray-400",
-                selectedNode.status === "error" && "bg-red-500"
+                selectedNode.status === "error" && "bg-red-500",
+                selectedNode.status === "pending" && "bg-yellow-500",
+                selectedNode.status === "deploying" && "bg-blue-500"
               )} />
             </span>
             <span className={cn(
               "text-sm font-medium capitalize",
               selectedNode.status === "active" && "text-green-700",
               selectedNode.status === "inactive" && "text-gray-600",
-              selectedNode.status === "error" && "text-red-700"
+              selectedNode.status === "error" && "text-red-700",
+              selectedNode.status === "pending" && "text-yellow-700",
+              selectedNode.status === "deploying" && "text-blue-700"
             )}>
               {selectedNode.status}
             </span>

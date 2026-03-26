@@ -1,4 +1,4 @@
-import { memo, useCallback, useEffect, useRef } from 'react';
+import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ReactFlow,
   Background,
@@ -21,10 +21,13 @@ import '@xyflow/react/dist/style.css';
 import { useProjects } from '@/hooks/useProjects';
 import { useFlowStore } from '@/stores/flowStore';
 import { usePricingStore } from '@/stores/pricingStore';
+import { useDeploy } from '@/hooks/useDeploy';
+import { useDeploymentEvents } from '@/hooks/useDeploymentEvents';
 import AppNode from '@/components/nodes/AppNode';
 import DatabaseNode from '@/components/nodes/DatabaseNode';
 import { FlowToolbar } from './FlowToolbar';
 import { ConfigurationPanel } from './ConfigurationPanel';
+import { DeploymentLogsPanel } from './DeploymentLogsPanel';
 import type { FlowNode, NodeType } from '@/types/flow';
 
 const nodeTypes: NodeTypes = {
@@ -48,10 +51,17 @@ function FlowCanvasComponent() {
     addEdge: addStoreEdge,
     removeEdge: removeStoreEdge,
     loadFromApi,
+    deploymentId,
+    isDeploying,
+    setDeploymentContext,
+    updateNodeStatus,
+    clearDeployment,
   } = useFlowStore();
 
   const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
+  const [showLogs, setShowLogs] = useState(false);
+  const [pendingNodeIds, setPendingNodeIds] = useState<string[]>([]);
 
   const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
   const selectedNodeIdRef = useRef(selectedNodeId);
@@ -107,6 +117,50 @@ function FlowCanvasComponent() {
       fetchPricing();
     }
   }, [pricing, fetchPricing]);
+
+  // Handle deployment
+  const { mutate: deploy } = useDeploy({
+    onDeployStarted: (deploymentId, nodeIds) => {
+      setDeploymentContext(deploymentId, nodeIds.length > 0 ? nodeIds : storeNodes.map(n => n.id));
+      setPendingNodeIds(nodeIds.length > 0 ? nodeIds : storeNodes.map(n => n.id));
+      setShowLogs(true);
+    },
+  });
+
+  // WebSocket events for real-time updates
+  const { logs, isConnected } = useDeploymentEvents({
+    deploymentId,
+    nodeIds: pendingNodeIds,
+    onLevelNodesStart: (nodeIds) => {
+      nodeIds.forEach((nodeId) => {
+        updateNodeStatus(nodeId, 'deploying');
+        setNodes((nds) =>
+          nds.map((n) =>
+            n.id === nodeId
+              ? { ...n, data: { ...n.data, status: 'deploying' as const } }
+              : n
+          )
+        );
+      });
+    },
+    onNodeStatusChange: (nodeId, status, message) => {
+      updateNodeStatus(nodeId, status, message);
+      setNodes((nds) =>
+        nds.map((n) =>
+          n.id === nodeId
+            ? { ...n, data: { ...n.data, status, errorMessage: message } }
+            : n
+        )
+      );
+    },
+    onComplete: () => {
+      setTimeout(() => {
+        setShowLogs(false);
+        clearDeployment();
+        setPendingNodeIds([]);
+      }, 3000);
+    },
+  });
 
   const handleConnect = useCallback(
     (connection: Connection) => {
@@ -168,6 +222,27 @@ function FlowCanvasComponent() {
   const handlePaneClick = useCallback(() => {
     setSelectedNodeId(null);
   }, [setSelectedNodeId]);
+
+  const handleDeploy = useCallback(() => {
+    const payload = {
+      nodes: storeNodes.map((node) => ({
+        id: node.id,
+        type: node.type,
+        name: node.name || node.label.toLowerCase().replace(/\s+/g, '-'),
+        plan_name: node.planName,
+        template_name: 'templateName' in node ? node.templateName : undefined,
+        location_name: node.locationName,
+        label: node.label,
+        ipv4: 'ipv4' in node ? node.ipv4 : true,
+        enable_backups: 'enableBackups' in node ? node.enableBackups : false,
+      })),
+      edges: edges.map((edge) => ({
+        source: edge.source,
+        target: edge.target,
+      })),
+    };
+    deploy(payload);
+  }, [storeNodes, edges, deploy]);
 
   const handleAddNode = useCallback(
     (type: 'app' | 'database') => {
@@ -248,12 +323,24 @@ function FlowCanvasComponent() {
         <MiniMap nodeStrokeWidth={3} zoomable pannable />
       </ReactFlow>
 
-      <FlowToolbar onAddNode={handleAddNode} />
+      <FlowToolbar 
+        onAddNode={handleAddNode} 
+        onDeploy={handleDeploy}
+        isDeploying={isDeploying}
+      />
 
       <ConfigurationPanel
         selectedNode={selectedNode}
         onUpdateNode={handleUpdateNode}
         onDeleteNode={handleDeleteNode}
+      />
+
+      <DeploymentLogsPanel
+        isOpen={showLogs}
+        onClose={() => setShowLogs(false)}
+        logs={logs}
+        isConnected={isConnected}
+        deploymentId={deploymentId}
       />
     </div>
   );

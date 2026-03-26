@@ -11,6 +11,7 @@ type DeployResponse = {
 };
 
 interface UseDeployOptions {
+  onDeployStarted?: (deploymentId: string, nodeIds: string[]) => void;
   onSuccess?: (data: DeployResponse) => void;
   onError?: (error: Error) => void;
 }
@@ -27,13 +28,14 @@ export function useDeploy(options: UseDeployOptions = {}) {
       });
     },
     onSuccess: (data) => {
-      toast.success('Deployment submitted!', {
+      toast.success('Deployment started!', {
         description: data.message,
-        action: data.deployment_id ? {
-          label: 'Track',
-          onClick: () => console.log('Deployment ID:', data.deployment_id),
-        } : undefined,
       });
+      
+      if (data.deployment_id) {
+        options.onDeployStarted?.(data.deployment_id, []);
+      }
+      
       queryClient.invalidateQueries({ queryKey: canvasKeys.all });
       options.onSuccess?.(data);
     },

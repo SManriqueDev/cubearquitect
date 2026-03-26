@@ -26,26 +26,35 @@ func (bp *NodeBasicBlueprint) Type() NodeType     { return NodeTypeApp }
 func (bp *NodeBasicBlueprint) Name() string       { return nodeBasicName }
 func (bp *NodeBasicBlueprint) EnvVarName() string { return "APP_URL" }
 
-func (bp *NodeBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error) {
+func (bp *NodeBasicBlueprint) BuildVPSRequest(node *DeployNode, params map[string]string) (interface{}, error) {
 	cloudInit := bp.generateCloudInit(params)
 
-	truncatedID := nodeID
-	if idx := strings.LastIndex(nodeID, "-"); idx > 0 {
-		truncatedID = nodeID[:idx]
+	truncatedID := node.ID
+	if idx := strings.LastIndex(node.ID, "-"); idx > 0 {
+		truncatedID = node.ID[:idx]
 	}
 	if len(truncatedID) > 50 {
 		truncatedID = truncatedID[:50]
+	}
+
+	name := node.Name
+	if name == "" {
+		name = fmt.Sprintf("vps-%s", truncatedID)
+	}
+	label := node.Label
+	if label == "" {
+		label = fmt.Sprintf("Node.js App (%s)", truncatedID)
 	}
 
 	planName := getStringParam(params, "plan_name", "gp.nano")
 	locationName := getStringParam(params, "location_name", "us-mia-1")
 
 	req := cubepath.VPSCreateRequest{
-		Name:            fmt.Sprintf("node-app-%s", truncatedID),
+		Name:            name,
 		PlanName:        planName,
 		TemplateName:    "ubuntu-24",
 		LocationName:    locationName,
-		Label:           fmt.Sprintf("Node.js App (%s)", nodeID),
+		Label:           label,
 		IPv4:            getBoolParam(params, "ipv4", false),
 		EnableBackups:   getBoolParam(params, "enable_backups", false),
 		CustomCloudinit: cloudInit,

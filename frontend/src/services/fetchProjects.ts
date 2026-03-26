@@ -28,6 +28,7 @@ interface VPSItem {
     location_name: string;
     description: string;
   };
+  node_type?: string;
 }
 
 interface ProjectResponse {
@@ -69,9 +70,11 @@ export async function fetchCanvasData(): Promise<CanvasData> {
           vps.floating_ips?.list[0]?.address ||
           '';
 
+        const nodeType = vps.node_type === 'database' ? 'database' : 'app';
+
         nodes.push({
           id: nodeId,
-          type: 'app',
+          type: nodeType,
           name: vps.name || vps.label,
           label: vps.label || vps.name,
           planName: vps.plan?.plan_name || 'default',

@@ -1,8 +1,6 @@
 import { memo } from 'react';
 import { Rocket, Server, Database } from 'lucide-react';
 import { useFlowStore } from '@/stores/flowStore';
-import { useDeploy } from '@/hooks/useDeploy';
-import { createDeployPayload } from '@/utils/nodeUtils';
 import {
   ToolbarButton,
   ToolbarAddButton,
@@ -12,20 +10,17 @@ import {
 
 interface FlowToolbarProps {
   onAddNode?: (type: 'app' | 'database') => void;
+  onDeploy?: () => void;
+  isDeploying?: boolean;
 }
 
 export const FlowToolbar = memo(function FlowToolbar({
   onAddNode,
+  onDeploy,
+  isDeploying = false,
 }: FlowToolbarProps) {
   const nodes = useFlowStore((state) => state.nodes);
   const edges = useFlowStore((state) => state.edges);
-
-  const { mutate: deploy, isPending: isDeploying } = useDeploy();
-
-  const handleDeploy = () => {
-    const payload = createDeployPayload(nodes, edges);
-    deploy(payload);
-  };
 
   const appCount = nodes.filter((n) => n.type === 'app').length;
   const dbCount = nodes.filter((n) => n.type === 'database').length;
@@ -45,8 +40,8 @@ export const FlowToolbar = memo(function FlowToolbar({
         icon={Rocket}
         label={isDeploying ? 'Deploying...' : 'Deploy'}
         variant="deploy"
-        onClick={handleDeploy}
-        disabled={!hasNodes}
+        onClick={onDeploy}
+        disabled={!hasNodes || isDeploying}
         loading={isDeploying}
       />
 

@@ -46,6 +46,10 @@ func (s *OrchestratorService) SetEventHub(hub *orchestrator.EventHub) {
 	s.engine.SetEventHub(hub)
 }
 
+func (s *OrchestratorService) SetNodeTypeStore(store *orchestrator.NodeTypeStore) {
+	s.engine.SetNodeTypeStore(store)
+}
+
 func (s *OrchestratorService) StartDeployment(payload *orchestrator.DeployPayload) (string, error) {
 	deploymentID := fmt.Sprintf("deploy-%d", time.Now().UnixNano())
 
