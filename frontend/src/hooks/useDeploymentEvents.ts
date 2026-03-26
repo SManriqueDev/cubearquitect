@@ -269,18 +269,28 @@ export function useDeploymentEvents({
   useEffect(() => {
     if (nodeIds.length > 0 && events.length > 0) {
       const lastEvent = events[events.length - 1];
-      
+
       if (lastEvent.type === 'error') {
         isCompletedRef.current = true;
         onCompleteRef.current?.();
       }
-      
-      const completedNodeUpdates = events.filter(
-        (e) => e.type === 'node_update' && e.status && 
-        ['active', 'error'].includes(mapBackendStatus(e.status).toLowerCase())
-      );
-      
-      if (completedNodeUpdates.length === nodeIds.length) {
+
+      const completedNodeIds = new Set<string>();
+
+      for (const e of events) {
+        if (
+          e.type === 'node_update' &&
+          e.status &&
+          ['active', 'error'].includes(mapBackendStatus(e.status).toLowerCase()) &&
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          (e as any).node_id
+        ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          completedNodeIds.add((e as any).node_id as string);
+        }
+      }
+
+      if (completedNodeIds.size === nodeIds.length) {
         isCompletedRef.current = true;
         setTimeout(() => onCompleteRef.current?.(), 1000);
       }
