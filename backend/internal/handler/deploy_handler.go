@@ -98,18 +98,18 @@ func (h *DeployHandler) WebSocketDeploymentEvents(c *websocket.Conn) {
 		"timestamp": time.Now().UnixMilli(),
 	})
 
+	// Atomically subscribe and drain any buffered events so no events are missed
+	// between clearing the buffer and registering the subscriber.
+	eventCh, bufferedEvents := h.eventHub.SubscribeAndDrain(deploymentID)
+	defer h.eventHub.Unsubscribe(deploymentID, eventCh)
+
 	// Send buffered events first (for late subscribers)
-	bufferedEvents := h.eventHub.GetBufferedEventsAndClear(deploymentID)
 	for _, event := range bufferedEvents {
 		if err := c.WriteJSON(event); err != nil {
 			log.Printf("WebSocket error sending buffered event: %v", err)
-			break
+			return
 		}
 	}
-
-	// Subscribe to events
-	eventCh := h.eventHub.Subscribe(deploymentID)
-	defer h.eventHub.Unsubscribe(deploymentID, eventCh)
 
 	// Forward events to client
 	for event := range eventCh {

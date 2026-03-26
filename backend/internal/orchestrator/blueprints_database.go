@@ -108,6 +108,6 @@ runcmd:
   - echo "[7/7] Restarting PostgreSQL..."
   - systemctl restart postgresql
   - echo "PostgreSQL setup complete"
-`, dbName, dbName, postgresUsername, postgresPassword, dbName, postgresUsername)
+`, dbName, dbName, postgresUsername, postgresUsername, postgresPassword, dbName, postgresUsername)
 	return cloudInit
 }
