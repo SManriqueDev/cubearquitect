@@ -143,18 +143,17 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   isDeploying: false,
 
   setDeploymentContext: (deploymentId, nodeIds) => {
-    set({
+    const idsToDeploy = new Set(nodeIds);
+    set((state) => ({
       deploymentId,
       deployingNodeIds: nodeIds,
       isDeploying: true,
-    });
-    nodeIds.forEach((id) => {
-      set((state) => ({
-        nodes: state.nodes.map((node) =>
-          node.id === id ? { ...node, status: 'pending' as NodeStatus } : node
-        ),
-      }));
-    });
+      nodes: state.nodes.map((node) =>
+        idsToDeploy.has(node.id)
+          ? { ...node, status: 'pending' as NodeStatus }
+          : node
+      ),
+    }));
   },
 
   updateNodeStatus: (nodeId, status, errorMessage) => {
