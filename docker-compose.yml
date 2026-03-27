@@ -9,7 +9,7 @@ services:
       - CUBE_API_URL=${CUBE_API_URL:-https://api.cubepath.com}
       - PORT=${PORT:-8080}
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT}/health"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT:-8080}/health"]
       interval: 30s
       timeout: 10s
       retries: 3
