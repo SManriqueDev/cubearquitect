@@ -27,29 +27,38 @@ func (bp *PostgresBasicBlueprint) Type() NodeType     { return NodeTypeDatabase 
 func (bp *PostgresBasicBlueprint) Name() string       { return postgresBasicName }
 func (bp *PostgresBasicBlueprint) EnvVarName() string { return "DATABASE_URL" }
 
-func (bp *PostgresBasicBlueprint) BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error) {
+func (bp *PostgresBasicBlueprint) BuildVPSRequest(node *DeployNode, params map[string]string) (interface{}, error) {
 	dbName := "app_db"
 	if custom, ok := params["db_name"]; ok {
 		dbName = custom
 	}
 
-	truncatedID := nodeID
-	if idx := strings.LastIndex(nodeID, "-"); idx > 0 {
-		truncatedID = nodeID[:idx]
+	truncatedID := node.ID
+	if idx := strings.LastIndex(node.ID, "-"); idx > 0 {
+		truncatedID = node.ID[:idx]
 	}
 	if len(truncatedID) > 50 {
 		truncatedID = truncatedID[:50]
+	}
+
+	name := node.Name
+	if name == "" {
+		name = fmt.Sprintf("vps-%s", truncatedID)
+	}
+	label := node.Label
+	if label == "" {
+		label = fmt.Sprintf("database PostgreSQL %s", truncatedID)
 	}
 
 	planName := getStringParam(params, "plan_name", "gp.nano")
 	locationName := getStringParam(params, "location_name", "us-mia-1")
 
 	req := cubepath.VPSCreateRequest{
-		Name:            fmt.Sprintf("postgres-%s", truncatedID),
+		Name:            name,
 		PlanName:        planName,
 		TemplateName:    "ubuntu-24",
 		LocationName:    locationName,
-		Label:           fmt.Sprintf("PostgreSQL (%s)", nodeID),
+		Label:           label,
 		IPv4:            getBoolParam(params, "ipv4", false),
 		EnableBackups:   getBoolParam(params, "enable_backups", false),
 		CustomCloudinit: bp.generateCloudInit(dbName),
@@ -99,6 +108,6 @@ runcmd:
   - echo "[7/7] Restarting PostgreSQL..."
   - systemctl restart postgresql
   - echo "PostgreSQL setup complete"
-`, dbName, dbName, postgresUsername, postgresPassword, dbName, postgresUsername)
+`, dbName, dbName, postgresUsername, postgresUsername, postgresPassword, dbName, postgresUsername)
 	return cloudInit
 }

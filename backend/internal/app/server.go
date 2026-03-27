@@ -11,25 +11,26 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/logger"
 )
 
-// New constructs a Fiber app wired with dependencies.
-func New(cfg *config.Config) *fiber.App {
+type App struct {
+	*fiber.App
+}
+
+func New(cfg *config.Config) *App {
 	client := cubepath.NewClient(cfg.BaseURL, cfg.Token)
-	app := fiber.New(fiber.Config{
+	fiberApp := fiber.New(fiber.Config{
 		AppName: "CubeArchitect API v1",
 	})
 
-	app.Use(logger.New())
-	app.Use(cors.New())
+	fiberApp.Use(logger.New())
+	fiberApp.Use(cors.New())
 
 	projectsService := service.NewProjectsService(client)
 	vpsService := service.NewVPSService(client, cfg.ProjectID)
 	pricingService := service.NewPricingService(client)
-	
-	// Initialize orchestrator
+
 	orchestratorService := service.NewOrchestratorService(client, cfg.ProjectID, cfg)
 	eventHub := orchestrator.NewEventHub()
-	
-	// Set event hub on the engine for event publishing
+
 	orchestratorService.SetEventHub(eventHub)
 
 	handlerSet := HandlerSet{
@@ -40,7 +41,13 @@ func New(cfg *config.Config) *fiber.App {
 		Deploy:   handler.NewDeployHandler(orchestratorService, eventHub),
 	}
 
-	RegisterRoutes(app, handlerSet)
+	RegisterRoutes(fiberApp, handlerSet)
 
-	return app
+	return &App{
+		App: fiberApp,
+	}
+}
+
+func (a *App) Close() error {
+	return nil
 }

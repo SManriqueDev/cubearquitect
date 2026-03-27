@@ -2,6 +2,7 @@ package handler
 
 import (
 	"log"
+	"time"
 
 	"github.com/SManriqueDev/cubearchitect/internal/orchestrator"
 	"github.com/SManriqueDev/cubearchitect/internal/service"
@@ -88,17 +89,27 @@ func (h *DeployHandler) WebSocketDeploymentEvents(c *websocket.Conn) {
 		return
 	}
 
-	// Subscribe to events
-	eventCh := h.eventHub.Subscribe(deploymentID)
-	defer h.eventHub.Unsubscribe(deploymentID, eventCh)
-
 	log.Printf("WebSocket client connected for deployment: %s", deploymentID)
 
 	// Send initial connection message
 	c.WriteJSON(fiber.Map{
-		"type":    "connected",
-		"message": "Connected to deployment stream",
+		"type":      "connected",
+		"message":   "Connected to deployment stream",
+		"timestamp": time.Now().UnixMilli(),
 	})
+
+	// Atomically subscribe and drain any buffered events so no events are missed
+	// between clearing the buffer and registering the subscriber.
+	eventCh, bufferedEvents := h.eventHub.SubscribeAndDrain(deploymentID)
+	defer h.eventHub.Unsubscribe(deploymentID, eventCh)
+
+	// Send buffered events first (for late subscribers)
+	for _, event := range bufferedEvents {
+		if err := c.WriteJSON(event); err != nil {
+			log.Printf("WebSocket error sending buffered event: %v", err)
+			return
+		}
+	}
 
 	// Forward events to client
 	for event := range eventCh {

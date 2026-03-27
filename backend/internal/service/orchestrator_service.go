@@ -59,8 +59,8 @@ func (s *OrchestratorService) StartDeployment(payload *orchestrator.DeployPayloa
 	for i, node := range payload.Nodes {
 		deps := []string{}
 		for _, edge := range payload.Edges {
-			if edge.Target == node.ID {
-				deps = append(deps, edge.Source)
+			if edge.Source == node.ID {
+				deps = append(deps, edge.Target)
 			}
 		}
 		services[i] = orchestrator.Service{

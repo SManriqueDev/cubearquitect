@@ -1,4 +1,4 @@
-import type { FlowNode, DeployPayload, DeployNode } from '@/types/flow';
+import type { FlowNode, DeployPayload, DeployNode, NodeStatus } from '@/types/flow';
 
 export function toDeployNode(node: FlowNode): DeployNode {
   if (node.type === 'app') {
@@ -38,15 +38,32 @@ export function createDeployPayload(
   };
 }
 
-export function getStatusColor(status: string): string {
+export function getStatusColor(status: NodeStatus): string {
   switch (status) {
     case 'active':
       return 'text-green-500';
-    case 'inactive':
-      return 'text-gray-400';
     case 'error':
       return 'text-red-500';
+    case 'pending':
+      return 'text-yellow-500';
+    case 'deploying':
+      return 'text-blue-500';
     default:
       return 'text-gray-400';
+  }
+}
+
+export function getStatusLabel(status: NodeStatus): string {
+  switch (status) {
+    case 'active':
+      return 'Active';
+    case 'error':
+      return 'Error';
+    case 'pending':
+      return 'Pending';
+    case 'deploying':
+      return 'Deploying';
+    default:
+      return status;
   }
 }

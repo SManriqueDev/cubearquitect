@@ -48,6 +48,8 @@ type VPSDeploymentInfo struct {
 	Status           string
 	IPAddress        string
 	ConnectionString string
+	NodeType         string
+	OriginalNodeID   string
 }
 
 type DeploymentContext struct {

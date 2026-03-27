@@ -1,5 +1,11 @@
 import { create } from 'zustand';
-import type { FlowNode, FlowEdge, AppNodeData, DatabaseNodeData } from '@/types/flow';
+import type {
+  FlowNode,
+  FlowEdge,
+  AppNodeData,
+  DatabaseNodeData,
+  NodeStatus,
+} from '@/types/flow';
 
 interface FlowState {
   selectedNodeId: string | null;
@@ -11,7 +17,10 @@ interface FlowState {
   setNodes: (nodes: FlowNode[]) => void;
   setEdges: (edges: FlowEdge[]) => void;
 
-  addNode: (type: 'app' | 'database', position: { x: number; y: number }) => FlowNode;
+  addNode: (
+    type: 'app' | 'database',
+    position: { x: number; y: number },
+  ) => FlowNode;
   updateNode: (id: string, data: Partial<FlowNode>) => void;
   removeNode: (id: string) => void;
 
@@ -21,19 +30,36 @@ interface FlowState {
   loadFromApi: (nodes: FlowNode[], edges: FlowEdge[]) => void;
   reset: () => void;
   getNode: (id: string) => FlowNode | undefined;
+
+  // Deployment context
+  deploymentId: string | null;
+  deployingNodeIds: string[];
+  pendingNodeIds: string[];
+  isDeploying: boolean;
+  showLogs: boolean;
+  setDeploymentContext: (deploymentId: string, nodeIds: string[]) => void;
+  updateNodeStatus: (
+    nodeId: string,
+    status: NodeStatus,
+    errorMessage?: string,
+  ) => void;
+  setShowLogs: (show: boolean) => void;
+  setPendingNodeIds: (nodeIds: string[]) => void;
+  clearDeployment: () => void;
 }
 
-const generateId = () => `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
+const generateId = () =>
+  `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
 const defaultAppNode = (projectId = 1): AppNodeData => ({
   id: generateId(),
   type: 'app',
   name: 'new-vps',
-  label: 'New VPS',
+  label: 'app Node.js new-vps',
   planName: 'gp.nano',
   templateName: 'ubuntu-24',
   locationName: 'us-mia-1',
-  status: 'inactive',
+  status: 'pending',
   ipv4: true,
   enableBackups: false,
   projectId,
@@ -44,11 +70,11 @@ const defaultDatabaseNode = (projectId = 1): DatabaseNodeData => ({
   id: generateId(),
   type: 'database',
   name: 'new-database',
-  label: 'New Database',
+  label: 'database PostgreSQL new-database',
   planName: 'gp.nano',
   locationName: 'us-mia-1',
-  status: 'inactive',
-  ipv4: false,
+  status: 'pending',
+  ipv4: true,
   enableBackups: false,
   projectId,
   isSelected: false,
@@ -58,6 +84,11 @@ const initialState = {
   selectedNodeId: null as string | null,
   nodes: [] as FlowNode[],
   edges: [] as FlowEdge[],
+  deploymentId: null as string | null,
+  deployingNodeIds: [] as string[],
+  pendingNodeIds: [] as string[],
+  isDeploying: false,
+  showLogs: false,
 };
 
 export const useFlowStore = create<FlowState>((set, get) => ({
@@ -70,9 +101,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   setEdges: (edges) => set({ edges }),
 
   addNode: (type) => {
-    const newNode = type === 'app'
-      ? defaultAppNode()
-      : defaultDatabaseNode();
+    const newNode = type === 'app' ? defaultAppNode() : defaultDatabaseNode();
 
     set((state) => ({
       nodes: [...state.nodes, newNode],
@@ -84,7 +113,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   updateNode: (id, data) => {
     set((state) => ({
       nodes: state.nodes.map((node) =>
-        node.id === id ? { ...node, ...data } as FlowNode : node
+        node.id === id ? ({ ...node, ...data } as FlowNode) : node,
       ),
     }));
   },
@@ -93,7 +122,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     set((state) => ({
       nodes: state.nodes.filter((node) => node.id !== id),
       edges: state.edges.filter(
-        (edge) => edge.source !== id && edge.target !== id
+        (edge) => edge.source !== id && edge.target !== id,
       ),
       selectedNodeId: state.selectedNodeId === id ? null : state.selectedNodeId,
     }));
@@ -108,7 +137,7 @@ export const useFlowStore = create<FlowState>((set, get) => ({
 
     set((state) => {
       const exists = state.edges.some(
-        (e) => e.source === source && e.target === target
+        (e) => e.source === source && e.target === target,
       );
       if (exists) return state;
 
@@ -129,4 +158,47 @@ export const useFlowStore = create<FlowState>((set, get) => ({
   getNode: (id) => {
     return get().nodes.find((node) => node.id === id);
   },
+
+  deploymentId: null,
+  deployingNodeIds: [],
+  isDeploying: false,
+
+  setDeploymentContext: (deploymentId, nodeIds) => {
+    const idsToDeploy = new Set(nodeIds);
+    set((state) => ({
+      deploymentId,
+      deployingNodeIds: nodeIds,
+      pendingNodeIds: nodeIds,
+      isDeploying: true,
+      nodes: state.nodes.map((node) =>
+        idsToDeploy.has(node.id)
+          ? { ...node, status: 'pending' as NodeStatus }
+          : node,
+      ),
+    }));
+  },
+
+  updateNodeStatus: (nodeId, status, errorMessage) => {
+    set((state) => ({
+      nodes: state.nodes.map((node) =>
+        node.id === nodeId
+          ? ({ ...node, status, errorMessage } as FlowNode)
+          : node,
+      ),
+    }));
+  },
+
+  clearDeployment: () => {
+    set({
+      deploymentId: null,
+      deployingNodeIds: [],
+      pendingNodeIds: [],
+      isDeploying: false,
+      showLogs: false,
+    });
+  },
+
+  setShowLogs: (show) => set({ showLogs: show }),
+
+  setPendingNodeIds: (nodeIds) => set({ pendingNodeIds: nodeIds }),
 }));

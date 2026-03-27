@@ -1,7 +1,28 @@
 // Flow data types
 
-export type NodeStatus = 'active' | 'inactive' | 'error';
+export type NodeStatus = 'pending' | 'deploying' | 'active' | 'error';
 export type NodeType = 'app' | 'database';
+
+// WebSocket deployment events from backend
+export interface DeploymentEvent {
+  type: 'connected' | 'node_update' | 'level_start' | 'level_complete' | 'error';
+  deployment_id: string;
+  node_id?: string;
+  node_ids?: string[];
+  status?: string;
+  message?: string;
+  level_idx?: number;
+  timestamp: number;
+}
+
+// Deployment log entry for UI
+export interface DeploymentLogEntry {
+  id: string;
+  type: 'info' | 'success' | 'error' | 'warning';
+  message: string;
+  nodeId?: string;
+  timestamp: number;
+}
 
 // Base node interface with index signature for React Flow compatibility
 export type BaseNodeData = {
@@ -13,6 +34,7 @@ export type BaseNodeData = {
   status: NodeStatus;
   projectId: number;
   isSelected?: boolean;
+  errorMessage?: string;
   [key: string]: unknown;
 };
 

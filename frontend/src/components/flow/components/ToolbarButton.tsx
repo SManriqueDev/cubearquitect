@@ -10,7 +10,7 @@ interface ToolbarButtonProps {
   onClick?: () => void;
   disabled?: boolean;
   loading?: boolean;
-  variant?: 'default' | 'outline' | 'deploy';
+  variant?: 'default' | 'outline' | 'deploy' | 'ghost';
   className?: string;
 }
 
@@ -30,6 +30,7 @@ export const ToolbarButton = memo(function ToolbarButton({
     default: 'hover:bg-muted',
     outline: 'hover:bg-muted dark:hover:bg-muted/50',
     deploy: 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm',
+    ghost: 'hover:bg-muted/50',
   };
 
   return (
@@ -44,10 +45,11 @@ export const ToolbarButton = memo(function ToolbarButton({
             'h-8 px-2.5 text-sm font-medium',
             'transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
             'disabled:pointer-events-none disabled:opacity-50',
-            'border border-transparent',
-            variant === 'deploy'
+            variant === 'deploy' 
               ? variantStyles.deploy
-              : 'bg-card border-border shadow-xs',
+              : variant === 'ghost'
+                ? variantStyles.ghost
+                : 'bg-card border border-border shadow-xs',
             variantStyles[variant],
             className
           )}
