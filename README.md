@@ -41,8 +41,6 @@ cd cubearquitect
 
 # Backend
 cd backend
-cp .env.example .env
-# Edita .env con tus credenciales de CubePath
 go mod download
 go run cmd/api/main.go
 
@@ -50,13 +48,6 @@ go run cmd/api/main.go
 cd ../frontend
 npm install
 npm run dev
-```
-
-### Variables de entorno (Backend)
-
-```env
-CUBEPATH_API_TOKEN=tu_token_aqui
-CUBEPATH_PROJECT_ID=tu_project_id
 ```
 
 ## 🛠️ Tecnologías
