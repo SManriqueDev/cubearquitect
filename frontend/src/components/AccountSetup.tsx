@@ -65,17 +65,14 @@ export function AccountSetup() {
   const handleSSHKeysSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
+    if (selectedSSHKeys.length === 0) {
+      setError('Please select at least one SSH key to continue');
+      return;
+    }
+    
     configureWithProject(tokenInput, selectedProjectId!, selectedProjectName);
     saveSSHKeys(sshKeys);
     saveSelectedSSHKeys(selectedSSHKeys);
-    
-    window.location.reload();
-  };
-
-  const handleSkipSSH = () => {
-    configureWithProject(tokenInput, selectedProjectId!, selectedProjectName);
-    saveSSHKeys([]);
-    saveSelectedSSHKeys([]);
     
     window.location.reload();
   };
@@ -227,15 +224,15 @@ export function AccountSetup() {
                 )}
               </div>
               
-              <div className="flex gap-2">
-                <Button type="button" onClick={handleSkipSSH} variant="outline" className="flex-1">
-                  Skip
-                </Button>
-                <Button type="submit" onClick={handleSSHKeysSubmit} className="flex-1">
-                  <Check className="w-4 h-4 mr-2" />
-                  Save
-                </Button>
-              </div>
+              <Button 
+                type="button" 
+                onClick={handleSSHKeysSubmit} 
+                className="w-full"
+                disabled={selectedSSHKeys.length === 0}
+              >
+                <Check className="w-4 h-4 mr-2" />
+                Save Configuration
+              </Button>
             </div>
           )}
         </CardContent>
