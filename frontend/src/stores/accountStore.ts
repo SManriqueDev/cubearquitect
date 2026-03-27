@@ -1,13 +1,5 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import {
-  getToken,
-  setToken,
-  removeToken,
-  getProjectId,
-  setProjectId,
-  removeProjectId,
-} from '@/services/api';
 
 export interface Project {
   id: number;
@@ -54,7 +46,6 @@ export const useAccountStore = create<AccountState>()(
       selectedSSHKeys: [],
 
       configure: (token: string) => {
-        setToken(token);
         set({
           token,
           isConfigured: true,
@@ -62,8 +53,6 @@ export const useAccountStore = create<AccountState>()(
       },
 
       configureWithProject: (token: string, projectId: number, projectName: string) => {
-        setToken(token);
-        setProjectId(projectId);
         set({
           token,
           isConfigured: true,
@@ -73,8 +62,6 @@ export const useAccountStore = create<AccountState>()(
       },
 
       clear: () => {
-        removeToken();
-        removeProjectId();
         set({
           isConfigured: false,
           token: null,
@@ -86,7 +73,6 @@ export const useAccountStore = create<AccountState>()(
       },
 
       setProject: (projectId: number, projectName: string) => {
-        setProjectId(projectId);
         set({ projectId, projectName });
       },
 
@@ -112,12 +98,9 @@ export const useAccountStore = create<AccountState>()(
       },
 
       initialize: () => {
-        const token = getToken();
-        const projectId = getProjectId();
+        const { token } = get();
         set({
-          token,
-          projectId,
-          isConfigured: token !== null,
+          isConfigured: token !== null && token !== '',
         });
       },
     }),
