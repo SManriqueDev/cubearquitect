@@ -286,11 +286,9 @@ export function useDeploymentEvents({
           e.type === 'node_update' &&
           e.status &&
           ['active', 'error'].includes(mapBackendStatus(e.status).toLowerCase()) &&
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          (e as any).node_id
+          e.node_id
         ) {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          completedNodeIds.add((e as any).node_id as string);
+          completedNodeIds.add(e.node_id);
         }
       }
 
