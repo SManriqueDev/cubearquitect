@@ -156,10 +156,6 @@ export const useFlowStore = create<FlowState>((set, get) => ({
     return get().nodes.find((node) => node.id === id);
   },
 
-  deploymentId: null,
-  deployingNodeIds: [],
-  isDeploying: false,
-
   setDeploymentContext: (deploymentId, nodeIds) => {
     const idsToDeploy = new Set(nodeIds);
     set((state) => ({
