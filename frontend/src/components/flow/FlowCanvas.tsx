@@ -123,24 +123,6 @@ function FlowCanvasComponent() {
     }
   }, [pricing, fetchPricing]);
 
-  // Sync Zustand store to React Flow
-  useEffect(() => {
-    setFlowNodes((nds) =>
-      nds.map((n) => {
-        const storeNode = storeNodes.find((sn) => sn.id === n.id);
-        if (!storeNode) return n;
-        return {
-          ...n,
-          data: {
-            ...n.data,
-            ...storeNode,
-            isSelected: storeNode.id === selectedNodeId,
-          },
-        };
-      })
-    );
-  }, [storeNodes, selectedNodeId, setFlowNodes]);
-
   // Handle deployment
   const { mutate: deploy } = useDeploy({
     onDeployStarted: (deploymentId, nodeIds) => {
