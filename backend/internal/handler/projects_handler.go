@@ -17,7 +17,7 @@ func NewProjectsHandler(svc *service.ProjectsService) *ProjectsHandler {
 
 // GetProjects returns the project list forwarded from CubePath.
 func (h *ProjectsHandler) GetProjects(c *fiber.Ctx) error {
-	projects, err := h.service.List()
+	projects, err := h.service.ListWithNodeTypes()
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

@@ -1,4 +1,4 @@
-import type { CanvasData, FlowNode, FlowEdge } from '@/types/flow';
+import type { CanvasData, FlowNode, FlowEdge, NodeStatus } from '@/types/flow';
 
 interface FloatingIP {
   address: string;
@@ -28,6 +28,7 @@ interface VPSItem {
     location_name: string;
     description: string;
   };
+  node_type?: string;
 }
 
 interface ProjectResponse {
@@ -61,7 +62,7 @@ export async function fetchCanvasData(): Promise<CanvasData> {
     projects.forEach((project) => {
       const projectId = project.project.id;
 
-      project.vps.forEach((vps, index) => {
+      project.vps.forEach((vps) => {
         const nodeId = `vps-${projectId}-${vps.id}`;
         const primaryIP =
           vps.floating_ips?.list.find((ip) => ip.is_primary && ip.type === 'IPv4')
@@ -69,9 +70,11 @@ export async function fetchCanvasData(): Promise<CanvasData> {
           vps.floating_ips?.list[0]?.address ||
           '';
 
+        const nodeType = vps.node_type === 'database' ? 'database' : 'app';
+
         nodes.push({
           id: nodeId,
-          type: 'app',
+          type: nodeType,
           name: vps.name || vps.label,
           label: vps.label || vps.name,
           planName: vps.plan?.plan_name || 'default',
@@ -83,17 +86,6 @@ export async function fetchCanvasData(): Promise<CanvasData> {
           enableBackups: false,
           projectId,
         });
-
-        if (index > 0) {
-          const prevNodeId = `vps-${projectId}-${project.vps[index - 1].id}`;
-          edges.push({
-            id: `edge-${prevNodeId}-${nodeId}`,
-            source: prevNodeId,
-            target: nodeId,
-            label: 'depends',
-            dependency: 'execution',
-          });
-        }
       });
     });
 
@@ -104,13 +96,13 @@ export async function fetchCanvasData(): Promise<CanvasData> {
   }
 }
 
-function mapVPSStatus(status: string): 'active' | 'inactive' | 'error' {
+function mapVPSStatus(status: string): NodeStatus {
   const normalizedStatus = status.toLowerCase();
-  if (normalizedStatus.includes('active') || normalizedStatus.includes('running')) {
+  if (normalizedStatus.includes('active') || normalizedStatus.includes('running') || normalizedStatus.includes('healthy')) {
     return 'active';
   }
   if (normalizedStatus.includes('error') || normalizedStatus.includes('failed')) {
     return 'error';
   }
-  return 'inactive';
+  return 'pending';
 }

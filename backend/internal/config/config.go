@@ -9,11 +9,11 @@ import (
 )
 
 type Config struct {
-	Token        string
-	BaseURL      string
-	Port         string
-	ProjectID    int
-	SSHKeyNames  string // Comma-separated SSH key names to use for VPS provisioning
+	Token       string
+	BaseURL     string
+	Port        string
+	ProjectID   int
+	SSHKeyNames string
 }
 
 func Load() *Config {

@@ -13,7 +13,7 @@ const (
 type Blueprint interface {
 	Type() NodeType
 	Name() string
-	BuildVPSRequest(nodeID string, params map[string]string) (interface{}, error)
+	BuildVPSRequest(node *DeployNode, params map[string]string) (interface{}, error)
 	ExtractConnectionString(vpsIP string, metadata map[string]interface{}) (string, error)
 	EnvVarName() string
 }

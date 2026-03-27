@@ -21,10 +21,14 @@ import '@xyflow/react/dist/style.css';
 import { useProjects } from '@/hooks/useProjects';
 import { useFlowStore } from '@/stores/flowStore';
 import { usePricingStore } from '@/stores/pricingStore';
+import { useDeploy } from '@/hooks/useDeploy';
+import { useDeploymentEvents } from '@/hooks/useDeploymentEvents';
 import AppNode from '@/components/nodes/AppNode';
 import DatabaseNode from '@/components/nodes/DatabaseNode';
 import { FlowToolbar } from './FlowToolbar';
 import { ConfigurationPanel } from './ConfigurationPanel';
+import { DeploymentLogsPanel } from './DeploymentLogsPanel';
+import { createDeployPayload } from '@/utils/nodeUtils';
 import type { FlowNode, NodeType } from '@/types/flow';
 
 const nodeTypes: NodeTypes = {
@@ -33,7 +37,10 @@ const nodeTypes: NodeTypes = {
 };
 
 const canConnect = (sourceType: NodeType, targetType: NodeType): boolean => {
-  return !(sourceType === 'database' && targetType === 'database');
+  // Only allow App → Database connections
+  // App represents the application that depends on Database
+  // Database provides configuration (connection string) to App
+  return sourceType === 'app' && targetType === 'database';
 };
 
 function FlowCanvasComponent() {
@@ -48,41 +55,50 @@ function FlowCanvasComponent() {
     addEdge: addStoreEdge,
     removeEdge: removeStoreEdge,
     loadFromApi,
+    deploymentId,
+    isDeploying,
+    pendingNodeIds,
+    showLogs,
+    setShowLogs,
+    setDeploymentContext,
+    updateNodeStatus,
   } = useFlowStore();
 
-  const [nodes, setNodes, onNodesChange] = useNodesState<Node>([]);
+  const [flowNodes, setFlowNodes, onNodesChange] = useNodesState<Node>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState<Edge>([]);
 
   const selectedNodeId = useFlowStore((state) => state.selectedNodeId);
   const selectedNodeIdRef = useRef(selectedNodeId);
-  useEffect(() => {
-    selectedNodeIdRef.current = selectedNodeId;
-  }, [selectedNodeId]);
 
   const selectedNode: FlowNode | null =
     storeNodes.find((n) => n.id === selectedNodeId) ?? null;
 
   const { pricing, fetch: fetchPricing } = usePricingStore();
 
-  // Sync selection state to React Flow nodes
+  // Sync Zustand store to React Flow
   useEffect(() => {
-    setNodes((nds) =>
-      nds.map((n) => ({
-        ...n,
-        data: {
-          ...n.data,
-          isSelected: n.id === selectedNodeId,
-        },
-      }))
+    setFlowNodes((nds) =>
+      nds.map((n) => {
+        const sn = storeNodes.find((s) => s.id === n.id);
+        if (!sn) return n;
+        return {
+          ...n,
+          data: {
+            ...n.data,
+            ...sn,
+            isSelected: sn.id === selectedNodeId,
+          },
+        };
+      })
     );
-  }, [selectedNodeId, setNodes]);
+  }, [storeNodes, selectedNodeId, setFlowNodes]);
 
   useEffect(() => {
     if (!data) return;
 
     loadFromApi(data.nodes, data.edges);
 
-    setNodes((currentNodes) => {
+    setFlowNodes((currentNodes) => {
       const positionMap = new Map(currentNodes.map((n) => [n.id, n.position]));
       return data.nodes.map((node, idx) => ({
         id: node.id,
@@ -100,7 +116,7 @@ function FlowCanvasComponent() {
         animated: true,
       }))
     );
-  }, [data, loadFromApi, setNodes, setEdges]);
+  }, [data, loadFromApi, setFlowNodes, setEdges]);
 
   useEffect(() => {
     if (!pricing) {
@@ -108,12 +124,38 @@ function FlowCanvasComponent() {
     }
   }, [pricing, fetchPricing]);
 
+  // Handle deployment
+  const { mutate: deploy } = useDeploy({
+    onDeployStarted: (deploymentId, nodeIds) => {
+      const ids = nodeIds.length > 0 ? nodeIds : storeNodes.map(n => n.id);
+      setDeploymentContext(deploymentId, ids);
+      setShowLogs(true);
+    },
+  });
+
+  // WebSocket events for real-time updates
+  const { logs, isConnected } = useDeploymentEvents({
+    deploymentId,
+    nodeIds: pendingNodeIds,
+    onLevelNodesStart: (nodeIds) => {
+      nodeIds.forEach((nodeId) => {
+        updateNodeStatus(nodeId, 'deploying');
+      });
+    },
+    onNodeStatusChange: (nodeId, status, message) => {
+      updateNodeStatus(nodeId, status, message);
+    },
+    onComplete: () => {
+      // Don't auto-close logs - user can review them and close manually
+    },
+  });
+
   const handleConnect = useCallback(
     (connection: Connection) => {
       if (!connection.source || !connection.target) return;
 
-      const sourceNode = nodes.find((n) => n.id === connection.source);
-      const targetNode = nodes.find((n) => n.id === connection.target);
+      const sourceNode = flowNodes.find((n) => n.id === connection.source);
+      const targetNode = flowNodes.find((n) => n.id === connection.target);
 
       if (!sourceNode || !targetNode) return;
 
@@ -126,7 +168,7 @@ function FlowCanvasComponent() {
       setEdges((eds) => addEdge(newEdge, eds));
       addStoreEdge(connection.source, connection.target);
     },
-    [nodes, setEdges, addStoreEdge]
+    [flowNodes, setEdges, addStoreEdge]
   );
 
   const handleNodesChange: OnNodesChange = useCallback(
@@ -169,6 +211,14 @@ function FlowCanvasComponent() {
     setSelectedNodeId(null);
   }, [setSelectedNodeId]);
 
+  const handleDeploy = useCallback(() => {
+    const payload = createDeployPayload(
+      storeNodes,
+      edges.map((edge) => ({ source: edge.source, target: edge.target }))
+    );
+    deploy(payload);
+  }, [storeNodes, edges, deploy]);
+
   const handleAddNode = useCallback(
     (type: 'app' | 'database') => {
       const position = { x: 200 + Math.random() * 200, y: 200 + Math.random() * 200 };
@@ -181,31 +231,31 @@ function FlowCanvasComponent() {
         data: { ...newNode, isSelected: true },
       };
 
-      setNodes((nds) => [...nds, flowNode]);
+      setFlowNodes((nds) => [...nds, flowNode]);
       setSelectedNodeId(newNode.id);
     },
-    [addNode, setNodes, setSelectedNodeId]
+    [addNode, setFlowNodes, setSelectedNodeId]
   );
 
   const handleUpdateNode = useCallback(
     (updatedNode: FlowNode) => {
       updateNode(updatedNode.id, updatedNode);
-      setNodes((nds) =>
+      setFlowNodes((nds) =>
         nds.map((n) =>
           n.id === updatedNode.id ? { ...n, data: { ...updatedNode, isSelected: n.data.isSelected } } : n
         )
       );
     },
-    [updateNode, setNodes]
+    [updateNode, setFlowNodes]
   );
 
   const handleDeleteNode = useCallback(
     (id: string) => {
       removeNode(id);
-      setNodes((nds) => nds.filter((n) => n.id !== id));
+      setFlowNodes((nds) => nds.filter((n) => n.id !== id));
       setEdges((eds) => eds.filter((e) => e.source !== id && e.target !== id));
     },
-    [removeNode, setNodes, setEdges]
+    [removeNode, setFlowNodes, setEdges]
   );
 
   if (isPending) {
@@ -233,7 +283,7 @@ function FlowCanvasComponent() {
   return (
     <div className="flex w-full h-screen bg-gray-50">
       <ReactFlow
-        nodes={nodes}
+        nodes={flowNodes}
         edges={edges}
         onNodesChange={handleNodesChange}
         onEdgesChange={handleEdgesChange}
@@ -248,12 +298,24 @@ function FlowCanvasComponent() {
         <MiniMap nodeStrokeWidth={3} zoomable pannable />
       </ReactFlow>
 
-      <FlowToolbar onAddNode={handleAddNode} />
+      <FlowToolbar 
+        onAddNode={handleAddNode} 
+        onDeploy={handleDeploy}
+        isDeploying={isDeploying}
+      />
 
       <ConfigurationPanel
         selectedNode={selectedNode}
         onUpdateNode={handleUpdateNode}
         onDeleteNode={handleDeleteNode}
+      />
+
+      <DeploymentLogsPanel
+        isOpen={showLogs}
+        onClose={() => setShowLogs(false)}
+        logs={logs}
+        isConnected={isConnected}
+        deploymentId={deploymentId}
       />
     </div>
   );
