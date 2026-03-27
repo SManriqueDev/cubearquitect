@@ -187,7 +187,7 @@ export function AccountSetup() {
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <Label>SSH Keys</Label>
-                  <span className="text-xs text-muted-foreground">Optional</span>
+                  <span className="text-xs text-muted-foreground">Required</span>
                 </div>
                 
                 {sshKeys.length === 0 ? (
