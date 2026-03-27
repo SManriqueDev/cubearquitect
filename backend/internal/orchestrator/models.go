@@ -1,5 +1,7 @@
 package orchestrator
 
+import "github.com/SManriqueDev/cubearchitect/internal/cubepath"
+
 type DeployNode struct {
 	ID            string            `json:"id"`
 	Type          NodeType          `json:"type"`
@@ -21,8 +23,10 @@ type DeployEdge struct {
 }
 
 type DeployPayload struct {
-	Nodes []DeployNode `json:"nodes"`
-	Edges []DeployEdge `json:"edges"`
+	ProjectID   int          `json:"project_id"`
+	SSHKeyNames []string     `json:"ssh_key_names,omitempty"`
+	Nodes       []DeployNode `json:"nodes"`
+	Edges       []DeployEdge `json:"edges"`
 }
 
 type DeployResponse struct {
@@ -54,6 +58,9 @@ type VPSDeploymentInfo struct {
 
 type DeploymentContext struct {
 	DeploymentID string
+	Client       *cubepath.Client
+	ProjectID    int
+	SSHKeyNames  []string
 	Nodes        map[string]*DeployNode
 	Edges        []DeployEdge
 	Plan         ExecutionPlan

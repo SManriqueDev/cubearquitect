@@ -1,4 +1,5 @@
 import type { CanvasData, FlowNode, FlowEdge, NodeStatus } from '@/types/flow';
+import { getToken } from './api';
 
 interface FloatingIP {
   address: string;
@@ -44,10 +45,12 @@ interface ProjectResponse {
 
 export async function fetchCanvasData(): Promise<CanvasData> {
   try {
+    const token = getToken();
     const response = await fetch('/api/projects', {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { 'X-Cube-Token': token }),
       },
     });
 

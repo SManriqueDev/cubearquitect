@@ -2,7 +2,6 @@ package app
 
 import (
 	"github.com/SManriqueDev/cubearchitect/internal/config"
-	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 	"github.com/SManriqueDev/cubearchitect/internal/handler"
 	"github.com/SManriqueDev/cubearchitect/internal/orchestrator"
 	"github.com/SManriqueDev/cubearchitect/internal/service"
@@ -13,10 +12,10 @@ import (
 
 type App struct {
 	*fiber.App
+	cfg *config.Config
 }
 
 func New(cfg *config.Config) *App {
-	client := cubepath.NewClient(cfg.BaseURL, cfg.Token)
 	fiberApp := fiber.New(fiber.Config{
 		AppName: "CubeArchitect API v1",
 	})
@@ -24,11 +23,15 @@ func New(cfg *config.Config) *App {
 	fiberApp.Use(logger.New())
 	fiberApp.Use(cors.New())
 
-	projectsService := service.NewProjectsService(client)
-	vpsService := service.NewVPSService(client, cfg.ProjectID)
-	pricingService := service.NewPricingService(client)
+	// Services are now created per-request via handlers using c.Locals
+	projectsService := service.NewProjectsService()
+	vpsService := service.NewVPSService()
+	pricingService := service.NewPricingService()
+	sshKeysService := service.NewSSHKeysService()
 
-	orchestratorService := service.NewOrchestratorService(client, cfg.ProjectID, cfg)
+	// Orchestrator service needs project ID from user, not from config
+	// We'll pass it dynamically in the handler
+	orchestratorService := service.NewOrchestratorService(nil, 0, cfg)
 	eventHub := orchestrator.NewEventHub()
 
 	orchestratorService.SetEventHub(eventHub)
@@ -39,12 +42,14 @@ func New(cfg *config.Config) *App {
 		VPS:      handler.NewVPSHandler(vpsService),
 		Pricing:  handler.NewPricingHandler(pricingService),
 		Deploy:   handler.NewDeployHandler(orchestratorService, eventHub),
+		SSHKeys:  handler.NewSSHKeysHandler(sshKeysService),
 	}
 
-	RegisterRoutes(fiberApp, handlerSet)
+	RegisterRoutes(fiberApp, handlerSet, cfg)
 
 	return &App{
 		App: fiberApp,
+		cfg: cfg,
 	}
 }
 

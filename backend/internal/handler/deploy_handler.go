@@ -4,6 +4,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/SManriqueDev/cubearchitect/internal/middleware"
 	"github.com/SManriqueDev/cubearchitect/internal/orchestrator"
 	"github.com/SManriqueDev/cubearchitect/internal/service"
 	"github.com/gofiber/contrib/websocket"
@@ -26,12 +27,21 @@ func NewDeployHandler(orchestratorSvc *service.OrchestratorService, eventHub *or
 
 // PostDeploy initiates a deployment.
 func (h *DeployHandler) PostDeploy(c *fiber.Ctx) error {
+	client, err := middleware.MustCubeClient(c)
+	if err != nil {
+		return err
+	}
+
 	var payload orchestrator.DeployPayload
 	if err := c.BodyParser(&payload); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 	}
 
-	deploymentID, err := h.orchestratorSvc.StartDeployment(&payload)
+	if payload.ProjectID == 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "project_id is required")
+	}
+
+	deploymentID, err := h.orchestratorSvc.StartDeployment(client, &payload)
 	if err != nil {
 		log.Printf("Deployment failed: %v", err)
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())

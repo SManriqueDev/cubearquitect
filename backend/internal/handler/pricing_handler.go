@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"github.com/SManriqueDev/cubearchitect/internal/middleware"
 	"github.com/SManriqueDev/cubearchitect/internal/service"
 	"github.com/gofiber/fiber/v2"
 )
@@ -17,7 +18,12 @@ func NewPricingHandler(svc *service.PricingService) *PricingHandler {
 
 // GetPricing returns the pricing payload from CubePath.
 func (h *PricingHandler) GetPricing(c *fiber.Ctx) error {
-	pricing, err := h.service.GetPricing()
+	client, err := middleware.MustCubeClient(c)
+	if err != nil {
+		return err
+	}
+
+	pricing, err := h.service.GetPricing(client)
 	if err != nil {
 		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}

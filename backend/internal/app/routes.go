@@ -1,7 +1,9 @@
 package app
 
 import (
+	"github.com/SManriqueDev/cubearchitect/internal/config"
 	"github.com/SManriqueDev/cubearchitect/internal/handler"
+	"github.com/SManriqueDev/cubearchitect/internal/middleware"
 	"github.com/gofiber/contrib/websocket"
 	"github.com/gofiber/fiber/v2"
 )
@@ -13,18 +15,21 @@ type HandlerSet struct {
 	VPS      *handler.VPSHandler
 	Pricing  *handler.PricingHandler
 	Deploy   *handler.DeployHandler
+	SSHKeys  *handler.SSHKeysHandler
 }
 
 // RegisterRoutes wires handlers to routes.
-func RegisterRoutes(app *fiber.App, handlers HandlerSet) {
+func RegisterRoutes(app *fiber.App, handlers HandlerSet, cfg *config.Config) {
 	app.Get("/health", handlers.Health.GetHealth)
-	app.Get("/api/projects", handlers.Projects.GetProjects)
-	app.Post("/api/vps", handlers.VPS.CreateVPS)
-	app.Get("/api/pricing", handlers.Pricing.GetPricing)
-	
-	// Deployment orchestration routes
-	app.Post("/api/deploy", handlers.Deploy.PostDeploy)
-	app.Get("/api/deployments", handlers.Deploy.ListDeployments)
-	app.Get("/api/deployments/:deployment_id", handlers.Deploy.GetDeploymentStatus)
-	app.Get("/api/deployments/:deployment_id/events", websocket.New(handlers.Deploy.WebSocketDeploymentEvents))
+
+	// Protected routes - require X-Cube-Token header
+	protected := app.Group("", middleware.CubeTokenMiddleware(cfg.BaseURL))
+
+	protected.Get("/api/projects", handlers.Projects.GetProjects)
+	protected.Get("/api/ssh-keys", handlers.SSHKeys.GetSSHKeys)
+	protected.Get("/api/pricing", handlers.Pricing.GetPricing)
+	protected.Post("/api/deploy", handlers.Deploy.PostDeploy)
+	protected.Get("/api/deployments", handlers.Deploy.ListDeployments)
+	protected.Get("/api/deployments/:deployment_id", handlers.Deploy.GetDeploymentStatus)
+	protected.Get("/api/deployments/:deployment_id/events", websocket.New(handlers.Deploy.WebSocketDeploymentEvents))
 }

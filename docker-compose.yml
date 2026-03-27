@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: cubearchitect-backend
+    ports:
+      - "8080:8080"
+    restart: unless-stopped
+    networks:
+      - cubearchitect
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: cubearchitect-frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+    networks:
+      - cubearchitect
+
+networks:
+  cubearchitect:
+    driver: bridge

@@ -8,12 +8,10 @@ import (
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 )
 
-type ProjectsService struct {
-	client *cubepath.Client
-}
+type ProjectsService struct{}
 
-func NewProjectsService(client *cubepath.Client) *ProjectsService {
-	return &ProjectsService{client: client}
+func NewProjectsService() *ProjectsService {
+	return &ProjectsService{}
 }
 
 type VPSItemWithType map[string]interface{}
@@ -27,8 +25,8 @@ type ProjectItemWithTypes struct {
 
 type ProjectsResponseWithTypes []ProjectItemWithTypes
 
-func (s *ProjectsService) List() (cubepath.ProjectResponse, error) {
-	res, err := s.client.Get("/projects/")
+func (s *ProjectsService) List(client *cubepath.Client) (cubepath.ProjectResponse, error) {
+	res, err := client.Get("/projects/")
 	if err != nil {
 		log.Printf("Error fetching projects: %v", err)
 		return nil, err
@@ -41,8 +39,8 @@ func (s *ProjectsService) List() (cubepath.ProjectResponse, error) {
 	return projects, nil
 }
 
-func (s *ProjectsService) ListWithNodeTypes() (ProjectsResponseWithTypes, error) {
-	projects, err := s.List()
+func (s *ProjectsService) ListWithNodeTypes(client *cubepath.Client) (ProjectsResponseWithTypes, error) {
+	projects, err := s.List(client)
 	if err != nil {
 		return nil, err
 	}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getToken } from '@/services/api';
 import type { DeploymentEvent, DeploymentLogEntry, NodeStatus } from '@/types/flow';
 
 interface UseDeploymentEventsOptions {
@@ -160,7 +161,8 @@ export function useDeploymentEvents({
     if (!deploymentId || isCompletedRef.current || isConnectingRef.current) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/deployments/${deploymentId}/events`;
+    const token = getToken();
+    const wsUrl = `${protocol}//${window.location.host}/api/deployments/${deploymentId}/events?token=${encodeURIComponent(token || '')}`;
 
     isConnectingRef.current = true;
 

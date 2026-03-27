@@ -8,18 +8,16 @@ import (
 )
 
 // PricingService wraps CubePath pricing retrieval.
-type PricingService struct {
-	client *cubepath.Client
-}
+type PricingService struct{}
 
 // NewPricingService builds a PricingService.
-func NewPricingService(client *cubepath.Client) *PricingService {
-	return &PricingService{client: client}
+func NewPricingService() *PricingService {
+	return &PricingService{}
 }
 
-// GetPricing proxies pricing data from CubePath.
-func (s *PricingService) GetPricing() (json.RawMessage, error) {
-	res, err := s.client.Get("/pricing/")
+// GetPricing proxies pricing data from CubePath using the provided client.
+func (s *PricingService) GetPricing(client *cubepath.Client) (json.RawMessage, error) {
+	res, err := client.Get("/pricing/")
 	if err != nil {
 		log.Printf("Error fetching pricing: %v", err)
 		return nil, err
