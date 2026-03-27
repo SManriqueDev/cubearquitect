@@ -62,7 +62,7 @@ export async function fetchCanvasData(): Promise<CanvasData> {
     projects.forEach((project) => {
       const projectId = project.project.id;
 
-      project.vps.forEach((vps, index) => {
+      project.vps.forEach((vps) => {
         const nodeId = `vps-${projectId}-${vps.id}`;
         const primaryIP =
           vps.floating_ips?.list.find((ip) => ip.is_primary && ip.type === 'IPv4')
@@ -86,17 +86,6 @@ export async function fetchCanvasData(): Promise<CanvasData> {
           enableBackups: false,
           projectId,
         });
-
-        if (index > 0) {
-          const prevNodeId = `vps-${projectId}-${project.vps[index - 1].id}`;
-          edges.push({
-            id: `edge-${prevNodeId}-${nodeId}`,
-            source: prevNodeId,
-            target: nodeId,
-            label: 'depends',
-            dependency: 'execution',
-          });
-        }
       });
     });
 
