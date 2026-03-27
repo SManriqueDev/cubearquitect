@@ -28,6 +28,7 @@ import DatabaseNode from '@/components/nodes/DatabaseNode';
 import { FlowToolbar } from './FlowToolbar';
 import { ConfigurationPanel } from './ConfigurationPanel';
 import { DeploymentLogsPanel } from './DeploymentLogsPanel';
+import { createDeployPayload } from '@/utils/nodeUtils';
 import type { FlowNode, NodeType } from '@/types/flow';
 
 const nodeTypes: NodeTypes = {
@@ -211,23 +212,10 @@ function FlowCanvasComponent() {
   }, [setSelectedNodeId]);
 
   const handleDeploy = useCallback(() => {
-    const payload = {
-      nodes: storeNodes.map((node) => ({
-        id: node.id,
-        type: node.type,
-        name: node.name || node.label.toLowerCase().replace(/\s+/g, '-'),
-        plan_name: node.planName,
-        template_name: 'templateName' in node ? node.templateName : undefined,
-        location_name: node.locationName,
-        label: node.label,
-        ipv4: 'ipv4' in node ? node.ipv4 : true,
-        enable_backups: 'enableBackups' in node ? node.enableBackups : false,
-      })),
-      edges: edges.map((edge) => ({
-        source: edge.source,
-        target: edge.target,
-      })),
-    };
+    const payload = createDeployPayload(
+      storeNodes,
+      edges.map((edge) => ({ source: edge.source, target: edge.target }))
+    );
     deploy(payload);
   }, [storeNodes, edges, deploy]);
 
