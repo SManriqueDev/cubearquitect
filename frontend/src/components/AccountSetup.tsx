@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Key, ArrowRight, Check } from 'lucide-react';
+import logo from '@/assets/logo.png';
 
 export function AccountSetup() {
   const [step, setStep] = useState<'token' | 'project' | 'ssh'>('token');
@@ -91,7 +92,7 @@ export function AccountSetup() {
         <CardHeader className="text-center space-y-2">
           <div className="mx-auto w-16 h-16 rounded-lg flex items-center justify-center">
             <img 
-              src="/src/assets/logo.png" 
+              src={logo} 
               alt="CubeArchitect" 
               className="w-full h-full object-contain"
             />
