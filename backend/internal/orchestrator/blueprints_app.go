@@ -60,8 +60,8 @@ func (bp *NodeBasicBlueprint) BuildVPSRequest(node *DeployNode, params map[strin
 		CustomCloudinit: cloudInit,
 	}
 
-	if bp.config.SSHKeyNames != "" {
-		keyNames := strings.Split(bp.config.SSHKeyNames, ",")
+	if sshKeys := getStringParam(params, "ssh_key_names", ""); sshKeys != "" {
+		keyNames := strings.Split(sshKeys, ",")
 		for i := range keyNames {
 			keyNames[i] = strings.TrimSpace(keyNames[i])
 		}

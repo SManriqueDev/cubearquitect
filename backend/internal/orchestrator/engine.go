@@ -169,6 +169,11 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 
 	mergedParams := e.buildMergedParams(node)
 
+	// Add SSH keys from deployment context to params
+	if len(deployCtx.SSHKeyNames) > 0 {
+		mergedParams["ssh_key_names"] = deployCtx.SSHKeyNames[0]
+	}
+
 	vpsReqInterface, err := blueprint.BuildVPSRequest(node, mergedParams)
 	if err != nil {
 		return fmt.Errorf("failed to build VPS request: %w", err)
