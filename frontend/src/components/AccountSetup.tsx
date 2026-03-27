@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import { apiFetch } from '@/services/api';
 import { useAccountStore, type Project, type SSHKey } from '@/stores/accountStore';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Loader2, Key, Server, ArrowRight, Check } from 'lucide-react';
 
 export function AccountSetup() {
   const [step, setStep] = useState<'token' | 'project' | 'ssh'>('token');
@@ -74,127 +80,166 @@ export function AccountSetup() {
     window.location.reload();
   };
 
+  const toggleSSHKey = (keyName: string) => {
+    if (selectedSSHKeys.includes(keyName)) {
+      setSelectedSSHKeys(selectedSSHKeys.filter(k => k !== keyName));
+    } else {
+      setSelectedSSHKeys([...selectedSSHKeys, keyName]);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex items-center justify-center bg-zinc-950">
-      <div className="w-full max-w-md p-8 bg-zinc-900 rounded-lg border border-zinc-800">
-        <div className="text-center mb-8">
-          <h1 className="text-2xl font-bold text-white mb-2">CubeArchitect</h1>
-          <p className="text-zinc-400">Configure your CubePath account</p>
-        </div>
-
-        {step === 'token' && (
-          <form onSubmit={handleTokenSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                API Token
-              </label>
-              <input
-                type="password"
-                value={tokenInput}
-                onChange={(e) => setTokenInput(e.target.value)}
-                placeholder="Enter your CubePath API token"
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              />
-              <p className="mt-2 text-xs text-zinc-500">
-                Get your token from the CubePath dashboard
-              </p>
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center space-y-2">
+          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+            <Server className="w-6 h-6 text-primary" />
+          </div>
+          <CardTitle className="text-2xl">CubeArchitect</CardTitle>
+          <CardDescription>Connect your CubePath account to get started</CardDescription>
+        </CardHeader>
+        
+        <CardContent>
+          {error && (
+            <div className="mb-6 p-3 rounded-md bg-destructive/10 border border-destructive/20 text-destructive text-sm">
+              {error}
             </div>
-            {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading || !tokenInput.trim()}
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
-            >
-              {loading ? 'Validating...' : 'Connect'}
-            </button>
-          </form>
-        )}
+          )}
 
-        {step === 'project' && (
-          <form onSubmit={handleProjectSelect}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                Select Project
-              </label>
-              <select
-                value={selectedProjectId || ''}
-                onChange={(e) => {
-                  const id = parseInt(e.target.value);
-                  const proj = projects.find(p => p.id === id);
-                  setSelectedProjectId(id);
-                  setSelectedProjectName(proj?.name || '');
-                }}
-                className="w-full px-4 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                required
-              >
-                <option value="">Select a project...</option>
-                {projects.map((project) => (
-                  <option key={project.id} value={project.id}>
-                    {project.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
-            <button
-              type="submit"
-              disabled={loading || !selectedProjectId}
-              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 disabled:bg-zinc-700 disabled:cursor-not-allowed text-white rounded-md font-medium transition-colors"
-            >
-              {loading ? 'Loading...' : 'Continue'}
-            </button>
-          </form>
-        )}
-
-        {step === 'ssh' && (
-          <form onSubmit={handleSSHKeysSubmit}>
-            <div className="mb-4">
-              <label className="block text-sm font-medium text-zinc-300 mb-2">
-                SSH Keys (optional)
-              </label>
-              {sshKeys.length === 0 ? (
-                <p className="text-zinc-500 text-sm">No SSH keys found</p>
-              ) : (
-                <div className="space-y-2 max-h-48 overflow-y-auto">
-                  {sshKeys.map((key) => (
-                    <label key={key.id} className="flex items-center gap-2 text-zinc-300">
-                      <input
-                        type="checkbox"
-                        checked={selectedSSHKeys.includes(key.name)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSelectedSSHKeys([...selectedSSHKeys, key.name]);
-                          } else {
-                            setSelectedSSHKeys(selectedSSHKeys.filter(k => k !== key.name));
-                          }
-                        }}
-                        className="rounded bg-zinc-800 border-zinc-700"
-                      />
-                      <span className="text-sm">{key.name}</span>
-                    </label>
-                  ))}
+          {step === 'token' && (
+            <form onSubmit={handleTokenSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="api-token">API Token</Label>
+                <div className="relative">
+                  <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    id="api-token"
+                    type="password"
+                    placeholder="Enter your CubePath API token"
+                    value={tokenInput}
+                    onChange={(e) => setTokenInput(e.target.value)}
+                    className="pl-10"
+                    autoComplete="off"
+                    required
+                  />
                 </div>
-              )}
+                <p className="text-xs text-muted-foreground">
+                  Get your token from the CubePath dashboard
+                </p>
+              </div>
+              
+              <Button type="submit" className="w-full" disabled={loading || !tokenInput.trim()}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Validating…
+                  </>
+                ) : (
+                  <>
+                    Connect
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
+
+          {step === 'project' && (
+            <form onSubmit={handleProjectSelect} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="project-select">Select Project</Label>
+                <select
+                  id="project-select"
+                  value={selectedProjectId || ''}
+                  onChange={(e) => {
+                    const id = parseInt(e.target.value);
+                    const proj = projects.find(p => p.id === id);
+                    setSelectedProjectId(id);
+                    setSelectedProjectName(proj?.name || '');
+                  }}
+                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+                  required
+                >
+                  <option value="">Select a project…</option>
+                  {projects.map((project) => (
+                    <option key={project.id} value={project.id}>
+                      {project.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <Button type="submit" className="w-full" disabled={loading || !selectedProjectId}>
+                {loading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Loading…
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="w-4 h-4 ml-2" />
+                  </>
+                )}
+              </Button>
+            </form>
+          )}
+
+          {step === 'ssh' && (
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <Label>SSH Keys</Label>
+                  <span className="text-xs text-muted-foreground">Optional</span>
+                </div>
+                
+                {sshKeys.length === 0 ? (
+                  <div className="text-center py-6 text-muted-foreground text-sm border border-dashed rounded-md">
+                    No SSH keys found in your account
+                  </div>
+                ) : (
+                  <div className="space-y-2 max-h-64 overflow-y-auto border rounded-md p-2">
+                    {sshKeys.map((key) => (
+                      <label
+                        key={key.id}
+                        className="flex items-center gap-3 p-3 rounded-md border transition-colors hover:bg-muted cursor-pointer"
+                        style={{
+                          backgroundColor: selectedSSHKeys.includes(key.name) ? 'var(--accent)' : undefined,
+                          borderColor: selectedSSHKeys.includes(key.name) ? 'var(--primary)' : undefined,
+                        }}
+                      >
+                        <Checkbox
+                          checked={selectedSSHKeys.includes(key.name)}
+                          onCheckedChange={() => toggleSSHKey(key.name)}
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="font-medium text-sm truncate">{key.name}</div>
+                          <div className="text-xs text-muted-foreground truncate">
+                            {key.fingerprint}
+                          </div>
+                        </div>
+                        {selectedSSHKeys.includes(key.name) && (
+                          <Check className="w-4 h-4 text-primary shrink-0" />
+                        )}
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-2">
+                <Button type="button" onClick={handleSkipSSH} variant="outline" className="flex-1">
+                  Skip
+                </Button>
+                <Button type="submit" onClick={handleSSHKeysSubmit} className="flex-1">
+                  <Check className="w-4 h-4 mr-2" />
+                  Save
+                </Button>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <button
-                type="submit"
-                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-md font-medium transition-colors"
-              >
-                Save
-              </button>
-              <button
-                type="button"
-                onClick={handleSkipSSH}
-                className="flex-1 py-2 px-4 bg-zinc-700 hover:bg-zinc-600 text-white rounded-md font-medium transition-colors"
-              >
-                Skip
-              </button>
-            </div>
-          </form>
-        )}
-      </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }
