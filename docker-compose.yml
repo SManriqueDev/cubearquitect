@@ -6,8 +6,8 @@ services:
     container_name: cubearchitect-backend
     restart: unless-stopped
     environment:
-      - CUBE_API_URL=${CUBE_API_URL:https://api.cubepath.com}
-      - PORT=${PORT:8080}
+      - CUBE_API_URL=${CUBE_API_URL:-https://api.cubepath.com}
+      - PORT=${PORT:-8080}
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:${PORT}/health"]
       interval: 30s
