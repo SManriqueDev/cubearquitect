@@ -17,7 +17,10 @@ interface FlowState {
   setNodes: (nodes: FlowNode[]) => void;
   setEdges: (edges: FlowEdge[]) => void;
 
-  addNode: (type: 'app' | 'database') => FlowNode;
+  addNode: (
+    type: 'app' | 'database',
+    position: { x: number; y: number },
+  ) => FlowNode;
   updateNode: (id: string, data: Partial<FlowNode>) => void;
   removeNode: (id: string) => void;
 
