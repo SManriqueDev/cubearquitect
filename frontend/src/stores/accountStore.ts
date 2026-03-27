@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import {
   getToken,
   setToken,
@@ -42,79 +43,94 @@ interface AccountState {
   initialize: () => void;
 }
 
-export const useAccountStore = create<AccountState>((set, get) => ({
-  isConfigured: false,
-  token: null,
-  projectId: null,
-  projectName: null,
-  sshKeys: [],
-  selectedSSHKeys: [],
-
-  configure: (token: string) => {
-    setToken(token);
-    set({
-      token,
-      isConfigured: true,
-    });
-  },
-
-  configureWithProject: (token: string, projectId: number, projectName: string) => {
-    setToken(token);
-    setProjectId(projectId);
-    set({
-      token,
-      isConfigured: true,
-      projectId,
-      projectName,
-    });
-  },
-
-  clear: () => {
-    removeToken();
-    removeProjectId();
-    set({
+export const useAccountStore = create<AccountState>()(
+  persist(
+    (set, get) => ({
       isConfigured: false,
       token: null,
       projectId: null,
       projectName: null,
       sshKeys: [],
       selectedSSHKeys: [],
-    });
-  },
 
-  setProject: (projectId: number, projectName: string) => {
-    setProjectId(projectId);
-    set({ projectId, projectName });
-  },
+      configure: (token: string) => {
+        setToken(token);
+        set({
+          token,
+          isConfigured: true,
+        });
+      },
 
-  setSSHKeys: (keys: SSHKey[]) => {
-    set({ sshKeys: keys });
-  },
+      configureWithProject: (token: string, projectId: number, projectName: string) => {
+        setToken(token);
+        setProjectId(projectId);
+        set({
+          token,
+          isConfigured: true,
+          projectId,
+          projectName,
+        });
+      },
 
-  toggleSSHKey: (keyName: string) => {
-    const { selectedSSHKeys } = get();
-    if (selectedSSHKeys.includes(keyName)) {
-      set({
-        selectedSSHKeys: selectedSSHKeys.filter(k => k !== keyName),
-      });
-    } else {
-      set({
-        selectedSSHKeys: [...selectedSSHKeys, keyName],
-      });
+      clear: () => {
+        removeToken();
+        removeProjectId();
+        set({
+          isConfigured: false,
+          token: null,
+          projectId: null,
+          projectName: null,
+          sshKeys: [],
+          selectedSSHKeys: [],
+        });
+      },
+
+      setProject: (projectId: number, projectName: string) => {
+        setProjectId(projectId);
+        set({ projectId, projectName });
+      },
+
+      setSSHKeys: (keys: SSHKey[]) => {
+        set({ sshKeys: keys });
+      },
+
+      toggleSSHKey: (keyName: string) => {
+        const { selectedSSHKeys } = get();
+        if (selectedSSHKeys.includes(keyName)) {
+          set({
+            selectedSSHKeys: selectedSSHKeys.filter(k => k !== keyName),
+          });
+        } else {
+          set({
+            selectedSSHKeys: [...selectedSSHKeys, keyName],
+          });
+        }
+      },
+
+      setSelectedSSHKeys: (keys: string[]) => {
+        set({ selectedSSHKeys: keys });
+      },
+
+      initialize: () => {
+        const token = getToken();
+        const projectId = getProjectId();
+        set({
+          token,
+          projectId,
+          isConfigured: token !== null,
+        });
+      },
+    }),
+    {
+      name: 'account-storage',
+      partialize: (state) => ({
+        isConfigured: state.isConfigured,
+        token: state.token,
+        projectId: state.projectId,
+        projectName: state.projectName,
+        sshKeys: state.sshKeys,
+        selectedSSHKeys: state.selectedSSHKeys,
+      }),
     }
-  },
-
-  setSelectedSSHKeys: (keys: string[]) => {
-    set({ selectedSSHKeys: keys });
-  },
-
-  initialize: () => {
-    const token = getToken();
-    const projectId = getProjectId();
-    set({
-      token,
-      projectId,
-      isConfigured: token !== null,
-    });
-  },
-}));
+  )
+);

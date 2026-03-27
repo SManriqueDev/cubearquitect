@@ -19,7 +19,7 @@ export function AccountSetup() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { configureWithProject, setSSHKeys: saveSSHKeys, setSelectedSSHKeys: saveSelectedSSHKeys } = useAccountStore();
+  const { configureWithProject, setSSHKeys: saveSSHKeys, setSelectedSSHKeys: saveSelectedSSHKeys, initialize } = useAccountStore();
 
   const handleTokenSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,7 +74,7 @@ export function AccountSetup() {
     saveSSHKeys(sshKeys);
     saveSelectedSSHKeys(selectedSSHKeys);
     
-    window.location.reload();
+    initialize();
   };
 
   const toggleSSHKey = (keyName: string) => {
