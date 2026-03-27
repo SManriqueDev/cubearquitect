@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useAccountStore } from '@/stores/accountStore';
 import type { DeploymentEvent, DeploymentLogEntry, NodeStatus } from '@/types/flow';
 
 interface UseDeploymentEventsOptions {
@@ -125,6 +126,7 @@ export function useDeploymentEvents({
   onError,
   onComplete,
 }: UseDeploymentEventsOptions): UseDeploymentEventsReturn {
+  const { token } = useAccountStore();
   const [events, setEvents] = useState<DeploymentEvent[]>([]);
   const [logs, setLogs] = useState<DeploymentLogEntry[]>([]);
   const [isConnected, setIsConnected] = useState(false);
@@ -160,7 +162,7 @@ export function useDeploymentEvents({
     if (!deploymentId || isCompletedRef.current || isConnectingRef.current) return;
 
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const wsUrl = `${protocol}//${window.location.host}/api/deployments/${deploymentId}/events`;
+    const wsUrl = `${protocol}//${window.location.host}/api/deployments/${deploymentId}/events?token=${encodeURIComponent(token || '')}`;
 
     isConnectingRef.current = true;
 

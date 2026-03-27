@@ -64,8 +64,8 @@ func (bp *PostgresBasicBlueprint) BuildVPSRequest(node *DeployNode, params map[s
 		CustomCloudinit: bp.generateCloudInit(dbName),
 	}
 
-	if bp.config.SSHKeyNames != "" {
-		keyNames := strings.Split(bp.config.SSHKeyNames, ",")
+	if sshKeys := getStringParam(params, "ssh_key_names", ""); sshKeys != "" {
+		keyNames := strings.Split(sshKeys, ",")
 		for i := range keyNames {
 			keyNames[i] = strings.TrimSpace(keyNames[i])
 		}

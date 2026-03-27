@@ -9,19 +9,16 @@ import (
 )
 
 // VPSService encapsulates CubePath VPS creation logic.
-type VPSService struct {
-	client    *cubepath.Client
-	projectID int
-}
+type VPSService struct{}
 
 // NewVPSService returns a VPSService.
-func NewVPSService(client *cubepath.Client, projectID int) *VPSService {
-	return &VPSService{client: client, projectID: projectID}
+func NewVPSService() *VPSService {
+	return &VPSService{}
 }
 
-// Create creates a VPS for the configured project.
-func (s *VPSService) Create(req cubepath.VPSCreateRequest) (*cubepath.VPS, error) {
-	res, err := s.client.Post(fmt.Sprintf("/vps/create/%d", s.projectID), req)
+// Create creates a VPS for the specified project.
+func (s *VPSService) Create(client *cubepath.Client, projectID int, req cubepath.VPSCreateRequest) (*cubepath.VPS, error) {
+	res, err := client.Post(fmt.Sprintf("/vps/create/%d", projectID), req)
 	if err != nil {
 		log.Printf("Error creating VPS via client: %v", err)
 		return nil, err

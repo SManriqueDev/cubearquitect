@@ -169,6 +169,11 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 
 	mergedParams := e.buildMergedParams(node)
 
+	// Add SSH keys from deployment context to params
+	if len(deployCtx.SSHKeyNames) > 0 {
+		mergedParams["ssh_key_names"] = deployCtx.SSHKeyNames[0]
+	}
+
 	vpsReqInterface, err := blueprint.BuildVPSRequest(node, mergedParams)
 	if err != nil {
 		return fmt.Errorf("failed to build VPS request: %w", err)
@@ -180,7 +185,7 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 	}
 
 	log.Printf("[Deployment %s] Creating VPS for node %s", deployCtx.DeploymentID, nodeID)
-	vpsID, vpsIP, err := e.createAndWaitVPS(ctx, vpsReq)
+	vpsID, vpsIP, err := e.createAndWaitVPS(ctx, deployCtx, vpsReq)
 	if err != nil {
 		return fmt.Errorf("failed to create VPS: %w", err)
 	}
@@ -209,8 +214,11 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 	return nil
 }
 
-func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, req cubepath.VPSCreateRequest) (int, string, error) {
-	respBytes, err := e.client.Post(fmt.Sprintf("/vps/create/%d", e.projectID), req)
+func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, deployCtx *DeploymentContext, req cubepath.VPSCreateRequest) (int, string, error) {
+	client := deployCtx.Client
+	projectID := deployCtx.ProjectID
+
+	respBytes, err := client.Post(fmt.Sprintf("/vps/create/%d", projectID), req)
 	if err != nil {
 		return 0, "", fmt.Errorf("CubePath VPS creation failed: %w", err)
 	}
@@ -288,7 +296,7 @@ func (e *DeploymentEngine) createAndWaitVPS(ctx context.Context, req cubepath.VP
 			log.Printf("[VPS %d] Polling status (attempt %d/%d, status=%s)", vps.ID, i, maxRetries, vps.Status)
 		}
 
-		statusBytes, err := e.client.Get("/vps/")
+		statusBytes, err := client.Get("/vps/")
 		if err != nil {
 			log.Printf("[VPS %d] Failed to fetch VPS list: %v, retrying...", vps.ID, err)
 			time.Sleep(retryInterval)

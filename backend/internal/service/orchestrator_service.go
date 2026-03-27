@@ -46,7 +46,7 @@ func (s *OrchestratorService) SetEventHub(hub *orchestrator.EventHub) {
 	s.engine.SetEventHub(hub)
 }
 
-func (s *OrchestratorService) StartDeployment(payload *orchestrator.DeployPayload) (string, error) {
+func (s *OrchestratorService) StartDeployment(client *cubepath.Client, payload *orchestrator.DeployPayload) (string, error) {
 	deploymentID := fmt.Sprintf("deploy-%d", time.Now().UnixNano())
 
 	if err := s.validatePayload(payload); err != nil {
@@ -54,6 +54,9 @@ func (s *OrchestratorService) StartDeployment(payload *orchestrator.DeployPayloa
 	}
 
 	ctx := orchestrator.NewDeploymentContext(deploymentID, payload)
+	ctx.Client = client
+	ctx.ProjectID = payload.ProjectID
+	ctx.SSHKeyNames = payload.SSHKeyNames
 
 	services := make([]orchestrator.Service, len(payload.Nodes))
 	for i, node := range payload.Nodes {

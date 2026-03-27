@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { apiFetch } from '@/services/api';
+import { useAccountStore } from '@/stores/accountStore';
 import { canvasKeys } from '@/services/queryKeys';
 import { deployPayloadSchema } from '@/services/schemas/flow';
 
@@ -18,13 +19,21 @@ interface UseDeployOptions {
 
 export function useDeploy(options: UseDeployOptions = {}) {
   const queryClient = useQueryClient();
+  const { projectId, selectedSSHKeys } = useAccountStore();
 
   return useMutation({
     mutationFn: async (payload: unknown) => {
       const validated = deployPayloadSchema.parse(payload);
+      
+      const deployPayload = {
+        ...validated,
+        project_id: projectId,
+        ssh_key_names: selectedSSHKeys,
+      };
+
       return apiFetch<DeployResponse>('/api/deploy', {
         method: 'POST',
-        body: JSON.stringify(validated),
+        body: JSON.stringify(deployPayload),
       });
     },
     onSuccess: (data, variables) => {
