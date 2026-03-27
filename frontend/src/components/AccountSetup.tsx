@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Loader2, Key, Server, ArrowRight, Check } from 'lucide-react';
+import { Loader2, Key, ArrowRight, Check } from 'lucide-react';
 
 export function AccountSetup() {
   const [step, setStep] = useState<'token' | 'project' | 'ssh'>('token');
@@ -89,8 +89,12 @@ export function AccountSetup() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center space-y-2">
-          <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Server className="w-6 h-6 text-primary" />
+          <div className="mx-auto w-16 h-16 rounded-lg flex items-center justify-center">
+            <img 
+              src="/src/assets/logo.png" 
+              alt="CubeArchitect" 
+              className="w-full h-full object-contain"
+            />
           </div>
           <CardTitle className="text-2xl">CubeArchitect</CardTitle>
           <CardDescription>Connect your CubePath account to get started</CardDescription>
