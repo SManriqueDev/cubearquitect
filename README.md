@@ -2,12 +2,6 @@
 
 **Editor visual para diseñar y desplegar arquitecturas de infraestructura en CubePath**
 
-CubeArquitect es una herramienta que permite crear arquitecturas de infraestructura mediante un editor visual de nodos. Cada nodo representa un VPS que se despliega automáticamente en CubePath con código boilerplate preconfigurado según su tipo.
-
-- **Nodos**: App (aplicaciones) y Database (bases de datos)
-- **Sistema DAG**: Despliegue por niveles - los nodos sin dependencias entre sí se despliegan en paralelo
-- **Inyección de variables**: Las conexiones entre nodos permiten inyectar automáticamente valores (ej: DATABASE_URL de Database → App)
-
 [![Go](https://img.shields.io/badge/Go-00ADD8?style=for-the-badge&logo=go&logoColor=white)](https://go.dev/)
 [![React](https://img.shields.io/badge/React-61DAFB?style=for-the-badge&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
@@ -15,6 +9,12 @@ CubeArquitect es una herramienta que permite crear arquitecturas de infraestruct
 [![Fiber](https://img.shields.io/badge/Fiber-00ADD8?style=for-the-badge&logo=&logoColor=white)](https://gofiber.io/)
 
 ---
+
+CubeArquitect es una herramienta que permite crear arquitecturas de infraestructura mediante un editor visual de nodos. Cada nodo representa un VPS que se despliega automáticamente en CubePath con código boilerplate preconfigurado según su tipo.
+
+- **Nodos**: App (aplicaciones) y Database (bases de datos)
+- **Sistema DAG**: Despliegue por niveles - los nodos sin dependencias entre sí se despliegan en paralelo
+- **Inyección de variables**: Las conexiones entre nodos permiten inyectar automáticamente valores (ej: DATABASE_URL de Database → App)
 
 ## ✨ Características
 
