@@ -20,7 +20,7 @@ CubeArquitect es una herramienta que permite crear arquitecturas de infraestruct
 
 - 🎨 **Editor visual drag-and-drop** para diseñar arquitecturas de infraestructura
 - 🖥️ **Nodos con boilerplate**: App y Database vienen con código preconfigurado listo para desplegar
-- 🔗 **Sistema DAG**: Despliegue por niveles - nodos sin dependencias se despliegan en paralelo
+- 🔗 **Sistema DAG**: Despliegue por niveles - nodos sin dependencias se despliegan en paralelo ([alg0.dev - topological sorting](https://www.alg0.dev/topological-sort))
 - 💉 **Inyección de variables**: Conecta nodos y las dependencias (ej: DATABASE_URL) se injectan automáticamente
 - 🚀 **Despliegue automático** en CubePath desde el editor visual
 - 📡 **Logs en tiempo real** del proceso de despliegue
