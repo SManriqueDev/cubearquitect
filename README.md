@@ -28,7 +28,7 @@ CubeArquitect es una herramienta que permite crear arquitecturas de infraestruct
 
 ## 🧱 Demo
 
-🚀 **Prueba la aplicación:** [http://vps23511.cubepath.net:3001/](http://vps23511.cubepath.net:3001/)
+🚀 **Prueba la aplicación:** [http://vps23781.cubepath.net:3001/](http://vps23781.cubepath.net:3001/)
 
 > **Nota**: Para usar la demo necesitas:
 > 1. Crear un API Token en [CubePath](https://my.cubepath.com/account/tokens)
