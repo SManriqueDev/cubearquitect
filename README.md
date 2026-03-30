@@ -7,6 +7,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![CubePath](https://img.shields.io/badge/CubePath-1E40AF?style=for-the-badge&logo=cloudflare&logoColor=white)](https://cubepath.com/)
 [![Fiber](https://img.shields.io/badge/Fiber-00ADD8?style=for-the-badge&logo=&logoColor=white)](https://gofiber.io/)
+[![golangci-lint](https://github.com/SManriqueDev/cubearquitect/actions/workflows/golangci-lint.yml/badge.svg)](https://github.com/SManriqueDev/cubearquitect/actions/workflows/golangci-lint.yml)
 
 ---
 
