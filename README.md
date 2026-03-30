@@ -25,7 +25,6 @@ CubeArquitect es una herramienta que permite crear arquitecturas de infraestruct
 - 🚀 **Despliegue automático** en CubePath desde el editor visual
 - 📡 **Logs en tiempo real** del proceso de despliegue
 - ⚙️ **Panel de configuración** por tipo de nodo
-- 💰 **Calculadora de precios** integrada
 
 ## 🧱 Demo
 
@@ -73,11 +72,21 @@ npm run dev
 
 ## 📸 Screenshots
 
-*[PLACEHOLDER: Añadir screenshot del editor visual - arrastrar nodos]*
+### 🔐 Account Setup
+![Account Setup](./docs/images/account_setup.png)
+*Configura tu API Token de CubePath para comenzar*
 
-*[PLACEHOLDER: Añadir screenshot del panel de configuración de nodo]*
+### 🎨 Editor Visual
+![Panel de Nodos](./docs/images/panel_nodes.png)
+*Arrastra y conecta nodos para diseñar tu arquitectura*
 
-*[PLACEHOLDER: Añadir screenshot de logs en tiempo real durante despliegue]*
+### ⚙️ Configuración de Nodos
+![Panel de Configuración](./docs/images/configuration_panel.png)
+*Configura cada nodo con planes, ubicaciones y templates*
+
+### 🚀 Despliegue
+![Panel de Despliegue](./docs/images/deployment_panel.png)
+*Monitorea el despliegue en tiempo real*
 
 ## 📂 Estructura del proyecto
 
