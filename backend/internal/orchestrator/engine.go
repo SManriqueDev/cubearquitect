@@ -11,6 +11,8 @@ import (
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 )
 
+const paramTrue = "true"
+
 type DeploymentEngine struct {
 	client    *cubepath.Client
 	registry  *BlueprintRegistry
@@ -31,7 +33,7 @@ func (e *DeploymentEngine) SetEventHub(hub *EventHub) {
 }
 
 func (e *DeploymentEngine) ExecuteDeployment(ctx context.Context, deployCtx *DeploymentContext) error {
-	if deployCtx.Plan == nil || len(deployCtx.Plan) == 0 {
+	if len(deployCtx.Plan) == 0 {
 		return fmt.Errorf("execution plan is empty")
 	}
 
@@ -60,7 +62,7 @@ func (e *DeploymentEngine) ExecuteDeployment(ctx context.Context, deployCtx *Dep
 	return nil
 }
 
-func (e *DeploymentEngine) executeLevel(ctx context.Context, deployCtx *DeploymentContext, level []string, levelIdx int) error {
+func (e *DeploymentEngine) executeLevel(ctx context.Context, deployCtx *DeploymentContext, level []string, _ int) error {
 	var wg sync.WaitGroup
 	errChan := make(chan error, len(level))
 
@@ -132,10 +134,10 @@ func (e *DeploymentEngine) buildMergedParams(node *DeployNode) map[string]string
 		mergedParams["template_name"] = node.TemplateName
 	}
 	if node.IPv4 {
-		mergedParams["ipv4"] = "true"
+		mergedParams["ipv4"] = paramTrue
 	}
 	if node.EnableBackups {
-		mergedParams["enable_backups"] = "true"
+		mergedParams["enable_backups"] = paramTrue
 	}
 
 	return mergedParams
@@ -206,9 +208,7 @@ func (e *DeploymentEngine) deployNode(ctx context.Context, deployCtx *Deployment
 		deployCtx.NodeStatuses[nodeID].VPSInfo.ConnectionString = connStr
 		log.Printf("[Deployment %s] Node %s connection string extracted: %s", deployCtx.DeploymentID, nodeID, connStr[:20]+"...")
 
-		if err := e.injectConnectionStringToDependents(deployCtx, nodeID, blueprint.EnvVarName(), connStr); err != nil {
-			return fmt.Errorf("failed to inject connection string: %w", err)
-		}
+		e.injectConnectionStringToDependents(deployCtx, nodeID, blueprint.EnvVarName(), connStr)
 	}
 
 	return nil
@@ -379,7 +379,7 @@ func (e *DeploymentEngine) getIP(vps *cubepath.VPS, requireIPv4 bool) string {
 	return ""
 }
 
-func (e *DeploymentEngine) injectConnectionStringToDependents(deployCtx *DeploymentContext, sourceNodeID string, envVarName, connStr string) error {
+func (e *DeploymentEngine) injectConnectionStringToDependents(deployCtx *DeploymentContext, sourceNodeID string, envVarName, connStr string) {
 	for _, edge := range deployCtx.Edges {
 		if edge.Source == sourceNodeID {
 			targetNodeID := edge.Target
@@ -397,6 +397,4 @@ func (e *DeploymentEngine) injectConnectionStringToDependents(deployCtx *Deploym
 			log.Printf("[Deployment %s] Injected %s into node %s", deployCtx.DeploymentID, envVarName, targetNodeID)
 		}
 	}
-
-	return nil
 }

@@ -29,8 +29,8 @@ type deploymentState struct {
 func NewOrchestratorService(client *cubepath.Client, projectID int, cfg *config.Config) *OrchestratorService {
 	registry := orchestrator.NewBlueprintRegistry()
 
-	registry.Register(orchestrator.NewPostgresBasicBlueprint(cfg))
-	registry.Register(orchestrator.NewNodeBasicBlueprint(cfg))
+	_ = registry.Register(orchestrator.NewPostgresBasicBlueprint(cfg))
+	_ = registry.Register(orchestrator.NewNodeBasicBlueprint(cfg))
 
 	engine := orchestrator.NewDeploymentEngine(client, projectID, registry)
 

@@ -94,15 +94,15 @@ func (h *DeployHandler) GetDeploymentStatus(c *fiber.Ctx) error {
 func (h *DeployHandler) WebSocketDeploymentEvents(c *websocket.Conn) {
 	deploymentID := c.Params("deployment_id")
 	if deploymentID == "" {
-		c.WriteMessage(websocket.TextMessage, []byte(`{"error":"deployment_id is required"}`))
-		c.Close()
+		_ = c.WriteMessage(websocket.TextMessage, []byte(`{"error":"deployment_id is required"}`))
+		_ = c.Close()
 		return
 	}
 
 	log.Printf("WebSocket client connected for deployment: %s", deploymentID)
 
 	// Send initial connection message
-	c.WriteJSON(fiber.Map{
+	_ = c.WriteJSON(fiber.Map{
 		"type":      "connected",
 		"message":   "Connected to deployment stream",
 		"timestamp": time.Now().UnixMilli(),

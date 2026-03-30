@@ -7,14 +7,9 @@ func getStringParam(params map[string]string, key, defaultValue string) string {
 	return defaultValue
 }
 
-func getBoolParam(params map[string]string, key string, defaultValue bool) bool {
+func getBoolParam(params map[string]string, key string, _ bool) bool {
 	if v, ok := params[key]; ok {
-		return v == "true"
+		return v == paramTrue
 	}
-	return defaultValue
-}
-
-func hasKey(params map[string]string, key string) bool {
-	_, ok := params[key]
-	return ok
+	return false
 }
