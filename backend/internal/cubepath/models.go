@@ -60,7 +60,7 @@ type VPS struct {
 	Location    interface{}    `json:"location"`
 	Network     interface{}    `json:"network"`
 	Firewall    []interface{}  `json:"firewall_groups"`
-	
+
 	// Computed fields for convenience (not in JSON)
 	IPv4 string `json:"-"`
 	IPv6 string `json:"-"`
@@ -79,12 +79,66 @@ func (v *VPS) ExtractIPs() {
 
 // VPSCreateResponse is the response from CubePath /vps/create endpoint
 type VPSCreateResponse struct {
-	Detail       string `json:"detail"`
-	VPSID        int    `json:"vps_id"`
-	Name         string `json:"name"`
-	Status       string `json:"status"`
-	Plan         string `json:"plan"`
-	Location     string `json:"location"`
-	IPv4Address  string `json:"ipv4_address"`
-	IPv6Address  string `json:"ipv6_address"`
+	Detail      string `json:"detail"`
+	VPSID       int    `json:"vps_id"`
+	Name        string `json:"name"`
+	Status      string `json:"status"`
+	Plan        string `json:"plan"`
+	Location    string `json:"location"`
+	IPv4Address string `json:"ipv4_address"`
+	IPv6Address string `json:"ipv6_address"`
+}
+
+// ============================================
+// Pricing - New Endpoints /vps/plans & /vps/templates
+// ============================================
+
+// PlansResponse from /vps/plans endpoint
+type PlansResponse struct {
+	Locations []VPSLocationNew `json:"locations"`
+}
+
+// VPSLocationNew represents location structure in /vps/plans
+type VPSLocationNew struct {
+	LocationName string    `json:"location_name"`
+	Description  string    `json:"description"`
+	Clusters     []Cluster `json:"clusters"`
+}
+
+// Cluster represents cluster in /vps/plans
+type Cluster struct {
+	ClusterName string `json:"cluster_name"`
+	Type        string `json:"type"`
+	Plans       []Plan `json:"plans"`
+}
+
+// Plan represents a VPS plan in /vps/plans
+type Plan struct {
+	PlanName     string `json:"plan_name"`
+	RAM          int    `json:"ram"`
+	CPU          int    `json:"cpu"`
+	Storage      int    `json:"storage"`
+	Bandwidth    int    `json:"bandwidth"`
+	PricePerHour string `json:"price_per_hour"`
+	Status       int    `json:"status"`
+}
+
+// TemplatesResponse from /vps/templates endpoint
+type TemplatesResponse struct {
+	OperatingSystems []TemplateOS  `json:"operating_systems"`
+	Applications     []TemplateApp `json:"applications"`
+}
+
+// TemplateOS represents an operating system template
+type TemplateOS struct {
+	TemplateName string `json:"template_name"`
+	OSName       string `json:"os_name"`
+	Version      string `json:"version"`
+}
+
+// TemplateApp represents an application template
+type TemplateApp struct {
+	AppName         string `json:"app_name"`
+	Version         string `json:"version"`
+	RecommendedPlan string `json:"recommended_plan"`
 }
