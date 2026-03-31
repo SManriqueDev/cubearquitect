@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/SManriqueDev/cubearchitect/internal/config"
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 )
 
@@ -15,11 +14,10 @@ const (
 )
 
 type NodeBasicBlueprint struct {
-	config *config.Config
 }
 
-func NewNodeBasicBlueprint(cfg *config.Config) *NodeBasicBlueprint {
-	return &NodeBasicBlueprint{config: cfg}
+func NewNodeBasicBlueprint() *NodeBasicBlueprint {
+	return &NodeBasicBlueprint{}
 }
 
 func (bp *NodeBasicBlueprint) Type() NodeType     { return NodeTypeApp }
