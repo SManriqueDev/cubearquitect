@@ -12,7 +12,6 @@ import (
 
 type App struct {
 	*fiber.App
-	cfg *config.Config
 }
 
 func New(cfg *config.Config) *App {
@@ -23,15 +22,12 @@ func New(cfg *config.Config) *App {
 	fiberApp.Use(logger.New())
 	fiberApp.Use(cors.New())
 
-	// Services are now created per-request via handlers using c.Locals
 	projectsService := service.NewProjectsService()
 	vpsService := service.NewVPSService()
 	pricingService := service.NewPricingService()
 	sshKeysService := service.NewSSHKeysService()
 
-	// Orchestrator service needs project ID from user, not from config
-	// We'll pass it dynamically in the handler
-	orchestratorService := service.NewOrchestratorService(nil, 0, cfg)
+	orchestratorService := service.NewOrchestratorService()
 	eventHub := orchestrator.NewEventHub()
 
 	orchestratorService.SetEventHub(eventHub)
@@ -49,7 +45,6 @@ func New(cfg *config.Config) *App {
 
 	return &App{
 		App: fiberApp,
-		cfg: cfg,
 	}
 }
 
