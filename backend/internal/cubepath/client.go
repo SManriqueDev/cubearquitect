@@ -10,6 +10,10 @@ import (
 	"time"
 )
 
+type CubePathClient interface {
+	Get(path string) (json.RawMessage, error)
+}
+
 type Client struct {
 	baseURL    string
 	token      string

@@ -7,20 +7,39 @@ import (
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 )
 
-type PricingService struct{}
-
-func NewPricingService() *PricingService {
-	return &PricingService{}
+type PricingService struct {
+	client cubepath.CubePathClient
 }
 
-func (s *PricingService) GetPricing(client *cubepath.Client) (json.RawMessage, error) {
-	plansRes, err := client.Get("/vps/plans")
+func NewPricingService(client cubepath.CubePathClient) *PricingService {
+	return &PricingService{
+		client: client,
+	}
+}
+
+func (s *PricingService) GetPlans() (cubepath.PlansResponse, error) {
+	resp, err := s.client.Get("/vps/plans")
+	var plansResp cubepath.PlansResponse
+	if err != nil {
+		log.Printf("Error fetching plans: %v", err)
+		return cubepath.PlansResponse{}, err
+	}
+	if err := json.Unmarshal(resp, &plansResp); err != nil {
+		log.Printf("Error parsing plans: %v", err)
+		return cubepath.PlansResponse{}, err
+	}
+
+	return plansResp, nil
+}
+
+func (s *PricingService) GetPricing() (json.RawMessage, error) {
+	plansRes, err := s.client.Get("/vps/plans")
 	if err != nil {
 		log.Printf("Error fetching plans: %v", err)
 		return nil, err
 	}
 
-	templatesRes, err := client.Get("/vps/templates")
+	templatesRes, err := s.client.Get("/vps/templates")
 	if err != nil {
 		log.Printf("Error fetching templates: %v", err)
 		return nil, err
