@@ -8,17 +8,14 @@ import (
 )
 
 type PricingService struct {
-	client cubepath.CubePathClient
 }
 
-func NewPricingService(client cubepath.CubePathClient) *PricingService {
-	return &PricingService{
-		client: client,
-	}
+func NewPricingService() *PricingService {
+	return &PricingService{}
 }
 
-func (s *PricingService) GetPlans() (cubepath.PlansResponse, error) {
-	resp, err := s.client.Get("/vps/plans")
+func (s *PricingService) GetPlans(client cubepath.CubePathClient) (cubepath.PlansResponse, error) {
+	resp, err := client.Get("/vps/plans")
 	var plansResp cubepath.PlansResponse
 	if err != nil {
 		log.Printf("Error fetching plans: %v", err)
@@ -32,14 +29,14 @@ func (s *PricingService) GetPlans() (cubepath.PlansResponse, error) {
 	return plansResp, nil
 }
 
-func (s *PricingService) GetPricing() (json.RawMessage, error) {
-	plansRes, err := s.client.Get("/vps/plans")
+func (s *PricingService) GetPricing(client cubepath.CubePathClient) (json.RawMessage, error) {
+	plansRes, err := client.Get("/vps/plans")
 	if err != nil {
 		log.Printf("Error fetching plans: %v", err)
 		return nil, err
 	}
 
-	templatesRes, err := s.client.Get("/vps/templates")
+	templatesRes, err := client.Get("/vps/templates")
 	if err != nil {
 		log.Printf("Error fetching templates: %v", err)
 		return nil, err

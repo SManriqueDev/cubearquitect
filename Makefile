@@ -3,6 +3,9 @@
 dev-backend:
 	cd backend && go run cmd/api/main.go
 
+backend-test:
+	cd backend && go test ./...
+
 dev-backend-hot:
 	cd backend && air
 

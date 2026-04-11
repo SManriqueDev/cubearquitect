@@ -21,9 +21,8 @@ func TestGetPlans(t *testing.T) {
 		Err: nil,
 	}
 
-	service := NewPricingService(mock)
-
-	plansResp, err := service.GetPlans()
+	service := NewPricingService()
+	plansResp, err := service.GetPlans(mock)
 
 	if err != nil {
 		t.Fatalf("expected no error, got %v", err)
