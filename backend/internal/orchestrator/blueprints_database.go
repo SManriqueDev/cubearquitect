@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/SManriqueDev/cubearchitect/internal/config"
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 )
 
@@ -16,11 +15,10 @@ const (
 )
 
 type PostgresBasicBlueprint struct {
-	config *config.Config
 }
 
-func NewPostgresBasicBlueprint(cfg *config.Config) *PostgresBasicBlueprint {
-	return &PostgresBasicBlueprint{config: cfg}
+func NewPostgresBasicBlueprint() *PostgresBasicBlueprint {
+	return &PostgresBasicBlueprint{}
 }
 
 func (bp *PostgresBasicBlueprint) Type() NodeType     { return NodeTypeDatabase }

@@ -7,17 +7,14 @@ import (
 	"sync"
 	"time"
 
-	"github.com/SManriqueDev/cubearchitect/internal/config"
 	"github.com/SManriqueDev/cubearchitect/internal/cubepath"
 	"github.com/SManriqueDev/cubearchitect/internal/orchestrator"
 )
 
 type OrchestratorService struct {
-	engine            *orchestrator.DeploymentEngine
-	blueprintRegistry *orchestrator.BlueprintRegistry
-	deployments       map[string]*deploymentState
-	config            *config.Config
-	mu                sync.RWMutex
+	engine      *orchestrator.DeploymentEngine
+	deployments map[string]*deploymentState
+	mu          sync.RWMutex
 }
 
 type deploymentState struct {
@@ -26,19 +23,17 @@ type deploymentState struct {
 	Error     error
 }
 
-func NewOrchestratorService(client *cubepath.Client, projectID int, cfg *config.Config) *OrchestratorService {
+func NewOrchestratorService() *OrchestratorService {
 	registry := orchestrator.NewBlueprintRegistry()
 
-	_ = registry.Register(orchestrator.NewPostgresBasicBlueprint(cfg))
-	_ = registry.Register(orchestrator.NewNodeBasicBlueprint(cfg))
+	_ = registry.Register(orchestrator.NewPostgresBasicBlueprint())
+	_ = registry.Register(orchestrator.NewNodeBasicBlueprint())
 
-	engine := orchestrator.NewDeploymentEngine(client, projectID, registry)
+	engine := orchestrator.NewDeploymentEngine(registry)
 
 	return &OrchestratorService{
-		engine:            engine,
-		blueprintRegistry: registry,
-		config:            cfg,
-		deployments:       make(map[string]*deploymentState),
+		engine:      engine,
+		deployments: make(map[string]*deploymentState),
 	}
 }
 

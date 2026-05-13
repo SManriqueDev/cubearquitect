@@ -14,17 +14,13 @@ import (
 const paramTrue = "true"
 
 type DeploymentEngine struct {
-	client    *cubepath.Client
-	registry  *BlueprintRegistry
-	projectID int
-	eventHub  *EventHub
+	registry *BlueprintRegistry
+	eventHub *EventHub
 }
 
-func NewDeploymentEngine(client *cubepath.Client, projectID int, registry *BlueprintRegistry) *DeploymentEngine {
+func NewDeploymentEngine(registry *BlueprintRegistry) *DeploymentEngine {
 	return &DeploymentEngine{
-		client:    client,
-		projectID: projectID,
-		registry:  registry,
+		registry: registry,
 	}
 }
 
